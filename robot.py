@@ -19,6 +19,7 @@ class ROBOT:
         self.motors = {}
         for jointName in pyrosim.jointNamesToIndices:
             self.motors[jointName] = MOTOR(jointName, numFrames)
+            self.motors[jointName].Prepare_To_Act()
 
     def Sense(self, t):
         for sensor in self.sensors.values():
@@ -26,4 +27,4 @@ class ROBOT:
 
     def Act(self, t):
          for motor in self.motors.values():
-             motor.Set_Value(0, t)
+             motor.Set_Value(0, t, self.robotId)

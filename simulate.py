@@ -15,16 +15,22 @@ robotId = p.loadURDF("body.urdf")
 p.loadSDF("world.sdf")
 
 n = 600
-amplitude = math.pi/4
-frequency = 10
-phaseOffset = 0
 
 pyrosim.Prepare_To_Simulate(robotId)
 backLegSensorValues = np.zeros(n)
 frontLegSensorValues = np.zeros(n)
 
-targetAngles = (math.pi/4) * np.sin(np.linspace(phaseOffset, 2*np.pi*frequency + phaseOffset, n))
-#np.save("data/targetAngles.npy", targetAngles)
+backAmplitude = math.pi/2
+backFrequency = 16
+backPhaseOffset = 0
+backTargetAngles = backAmplitude * np.sin(np.linspace(backPhaseOffset, 2*np.pi*backFrequency + backPhaseOffset, n))
+#np.save("data/backTargetAngles.npy", backTargetAngles)
+
+frontAmplitude = math.pi/32
+frontFrequency = 40
+frontPhaseOffset = 0
+frontTargetAngles = frontAmplitude * np.sin(np.linspace(frontPhaseOffset, 2*np.pi*frontFrequency + frontPhaseOffset, n))
+#np.save("data/frontTargetAngles.npy", frontTargetAngles)
 
 for i in range(n):
     p.stepSimulation()
@@ -35,14 +41,14 @@ for i in range(n):
         bodyIndex = robotId,
         jointName = "Torso_BackLeg",
         controlMode = p.POSITION_CONTROL,
-        targetPosition = targetAngles[i],
+        targetPosition = backTargetAngles[i],
         maxForce = 500)
 
     pyrosim.Set_Motor_For_Joint(
         bodyIndex = robotId,
         jointName = "Torso_FrontLeg",
         controlMode = p.POSITION_CONTROL,
-        targetPosition = targetAngles[i],
+        targetPosition = frontTargetAngles[i],
         maxForce = 500)
     
     time.sleep(1/60)

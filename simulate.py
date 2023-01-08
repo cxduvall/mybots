@@ -5,34 +5,34 @@ import pyrosim.pyrosim as pyrosim
 import numpy as np
 import math
 import random
+import constants as c
+from simulation import SIMULATION
 
+'''
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
+p.setGravity(0,0,-1 * c.gravityStrength)
 
-p.setGravity(0,0,-9.8)
 planeId = p.loadURDF("plane.urdf")
 robotId = p.loadURDF("body.urdf")
 p.loadSDF("world.sdf")
 
-n = 600
-
 pyrosim.Prepare_To_Simulate(robotId)
+
+n = c.numSecs * c.fps
+
 backLegSensorValues = np.zeros(n)
 frontLegSensorValues = np.zeros(n)
 
-backAmplitude = math.pi/2
-backFrequency = 16
-backPhaseOffset = 0
-backTargetAngles = backAmplitude * np.sin(np.linspace(backPhaseOffset, 2*np.pi*backFrequency + backPhaseOffset, n))
+# ^ DONE
+
+backTargetAngles = c.backAmplitude * np.sin(np.linspace(c.backPhaseOffset, 2*np.pi*c.backFrequency + c.backPhaseOffset, n))
 #np.save("data/backTargetAngles.npy", backTargetAngles)
 
-frontAmplitude = math.pi/32
-frontFrequency = 40
-frontPhaseOffset = 0
-frontTargetAngles = frontAmplitude * np.sin(np.linspace(frontPhaseOffset, 2*np.pi*frontFrequency + frontPhaseOffset, n))
+frontTargetAngles = c.frontAmplitude * np.sin(np.linspace(c.frontPhaseOffset, 2*np.pi*c.frontFrequency + c.frontPhaseOffset, n))
 #np.save("data/frontTargetAngles.npy", frontTargetAngles)
 
-for i in range(n):
+for i in range(n): # DONE
     p.stepSimulation()
     backLegSensorValues[i] = pyrosim.Get_Touch_Sensor_Value_For_Link("BackLeg")
     frontLegSensorValues[i] = pyrosim.Get_Touch_Sensor_Value_For_Link("FrontLeg")
@@ -42,19 +42,27 @@ for i in range(n):
         jointName = "Torso_BackLeg",
         controlMode = p.POSITION_CONTROL,
         targetPosition = backTargetAngles[i],
-        maxForce = 500)
+        maxForce = c.maxForce)
 
     pyrosim.Set_Motor_For_Joint(
         bodyIndex = robotId,
         jointName = "Torso_FrontLeg",
         controlMode = p.POSITION_CONTROL,
         targetPosition = frontTargetAngles[i],
-        maxForce = 500)
+        maxForce = c.maxForce)
     
-    time.sleep(1/60)
-    if i % 60 == 0:
-        print("time: " + str(i/60))
+    time.sleep(1/c.fps)
+    if i % c.fps == 0:
+        print("time: " + str(i/c.fps))
+
+
+
+
 np.save("data/frontLegSensorValues.npy", frontLegSensorValues)
 np.save("data/backLegSensorValues.npy", backLegSensorValues)
 
-p.disconnect()
+p.disconnect() # DONE
+'''
+
+simulation = SIMULATION()
+simulation.Run()

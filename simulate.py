@@ -24,13 +24,13 @@ n = c.numSecs * c.fps
 backLegSensorValues = np.zeros(n)
 frontLegSensorValues = np.zeros(n)
 
-# ^ DONE
-
 backTargetAngles = c.backAmplitude * np.sin(np.linspace(c.backPhaseOffset, 2*np.pi*c.backFrequency + c.backPhaseOffset, n))
 #np.save("data/backTargetAngles.npy", backTargetAngles)
 
 frontTargetAngles = c.frontAmplitude * np.sin(np.linspace(c.frontPhaseOffset, 2*np.pi*c.frontFrequency + c.frontPhaseOffset, n))
 #np.save("data/frontTargetAngles.npy", frontTargetAngles)
+
+# ^ DONE
 
 for i in range(n): # DONE
     p.stepSimulation()

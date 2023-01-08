@@ -19,11 +19,12 @@ class SIMULATION:
         for i in range(self.numFrames): # DONE
             p.stepSimulation()
             self.robot.Sense(i)
+            self.robot.Think(i)
             self.robot.Act(i)
     
             time.sleep(1/c.fps)
-            if i % c.fps == 0:
-                print("time: " + str(i/c.fps))
+            #if i % c.fps == 0:
+                #print("time: " + str(i/c.fps))
 
     def __del__(self):
         p.disconnect()

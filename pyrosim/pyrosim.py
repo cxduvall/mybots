@@ -84,7 +84,7 @@ def Prepare_Link_Dictionary(bodyID):
 
            rootLinkName = jointName[0]
 
-           linkNamesToIndices[rootLinkName] = -1 
+           linkNamesToIndices[rootLinkName] = -1
 
 def Prepare_Joint_Dictionary(bodyID):
 
@@ -96,7 +96,7 @@ def Prepare_Joint_Dictionary(bodyID):
 
         jointInfo = p.getJointInfo( bodyID , jointIndex )
 
-        jointName = jointInfo[1]
+        jointName = jointInfo[1].decode('UTF-8')
 
         jointNamesToIndices[jointName] = jointIndex
 
@@ -152,7 +152,7 @@ def Send_Synapse( sourceNeuronName , targetNeuronName , weight ):
 
     f.write('    <synapse sourceNeuronName = "' + str(sourceNeuronName) + '" targetNeuronName = "' + str(targetNeuronName) + '" weight = "' + str(weight) + '" />\n')
 
- 
+
 def Set_Motor_For_Joint(bodyIndex,jointName,controlMode,targetPosition,maxForce):
 
     p.setJointMotorControl2(
@@ -198,7 +198,7 @@ def Start_SDF(filename):
     filetype = SDF_FILETYPE
 
     global f
- 
+
     f = open(filename,"w")
 
     global sdf
@@ -229,7 +229,7 @@ def Start_URDF(filename):
 
     f = open(filename,"w")
 
-    global urdf 
+    global urdf
 
     urdf = URDF()
 
@@ -241,7 +241,7 @@ def Start_URDF(filename):
 
 def Start_Model(modelName,pos):
 
-    global model 
+    global model
 
     model = MODEL(modelName,pos)
 

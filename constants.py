@@ -11,3 +11,4 @@ phaseOffset = 0
 maxForce = 500
 
 numberOfGenerations = 10
+populationSize = 10

@@ -8,16 +8,17 @@ import time
 import math
 
 class SIMULATION:
-    def __init__(self, directOrGUI):
+    def __init__(self, directOrGUI, id):
         if directOrGUI == "DIRECT":
             self.physicsClient = p.connect(p.DIRECT)
         else:
             self.physicsClient = p.connect(p.GUI)
         self.directOrGUI = directOrGUI
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
+        #pyrosim.Prepare_To_Simulate(id)
         self.numFrames = math.floor(c.numSecs * c.fps)
         self.world = WORLD()
-        self.robot = ROBOT(self.numFrames)
+        self.robot = ROBOT(self.numFrames, id)
         p.setGravity(0,0,-1 * c.gravityStrength)
 
     def Run(self):

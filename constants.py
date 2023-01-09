@@ -1,7 +1,7 @@
 import math
 
 gravityStrength = 9.8
-numSecs = 10
+numSecs = 20
 fps = 60
 
 amplitude = math.pi/2

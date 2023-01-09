@@ -5,12 +5,17 @@ from world import WORLD
 from robot import ROBOT
 import constants as c
 import time
+import math
 
 class SIMULATION:
-    def __init__(self):
-        self.physicsClient = p.connect(p.GUI)
+    def __init__(self, directOrGUI):
+        if directOrGUI == "DIRECT":
+            self.physicsClient = p.connect(p.DIRECT)
+        else:
+            self.physicsClient = p.connect(p.GUI)
+        self.directOrGUI = directOrGUI
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
-        self.numFrames = c.numSecs * c.fps
+        self.numFrames = math.floor(c.numSecs * c.fps)
         self.world = WORLD()
         self.robot = ROBOT(self.numFrames)
         p.setGravity(0,0,-1 * c.gravityStrength)
@@ -22,9 +27,14 @@ class SIMULATION:
             self.robot.Think(i)
             self.robot.Act(i)
     
-            time.sleep(1/c.fps)
+            if self.directOrGUI == "GUI":
+                time.sleep(1/c.fps)
+
             #if i % c.fps == 0:
                 #print("time: " + str(i/c.fps))
+    
+    def Get_Fitness(self):
+        self.robot.Get_Fitness()
 
     def __del__(self):
         p.disconnect()

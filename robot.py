@@ -35,7 +35,7 @@ class ROBOT:
 
     def Think(self, t):
         self.nn.Update()
-        self.nn.Print()
+        #self.nn.Print()
 
     def Save_Sensor_Values(self):
         for sensor in self.sensors.values:
@@ -44,3 +44,10 @@ class ROBOT:
     def Save_Motor_Values(self):
         for motor in self.motors.values:
             motor.Save_Values()
+
+    def Get_Fitness(self):
+        stateOfLinkZero = p.getLinkState(self.robotId, 0)
+        positionOfLinkZero = stateOfLinkZero[0]
+        xCoordinateOfLinkZero = positionOfLinkZero[0]
+        with open("fitness.txt", "w") as f:
+            f.write(str(xCoordinateOfLinkZero))

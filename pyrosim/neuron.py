@@ -61,7 +61,7 @@ class NEURON:
             if key[1] == self.Get_Name():
                 self.Allow_Presynaptic_Neuron_To_Influence_Me(synapses[key].Get_Weight(), neurons[key[0]].Get_Value())
         self.Threshold()
-        print("my new val:", self.Get_Value())
+        #print("my new val:", self.Get_Value())
 
     def Allow_Presynaptic_Neuron_To_Influence_Me(self, weight, neuronVal):
         self.Add_To_Value(weight * neuronVal)

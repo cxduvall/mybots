@@ -14,9 +14,6 @@ def Create_World():
     pyrosim.Send_Cube(name="Box", pos=[x-2,y+2,z] , size=[width*scale,length*scale,height*scale])
     pyrosim.End()
 
-def Create_Robot():
-   pass
-
 def Generate_Body():
     pyrosim.Start_URDF("body.urdf")
     

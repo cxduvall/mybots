@@ -19,7 +19,7 @@ class SIMULATION:
         self.numFrames = math.floor(c.numSecs * c.fps)
         self.world = WORLD()
         self.robot = ROBOT(self.numFrames, id)
-        p.setGravity(0,0,-1 * c.gravityStrength)
+        p.setGravity(0,0, -1 * c.gravityStrength)
 
     def Run(self):
         for i in range(self.numFrames): # DONE

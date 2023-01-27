@@ -1,6 +1,7 @@
 from simulation import SIMULATION
 import sys
 
+print("in simulate!")
 directOrGUI = sys.argv[1]
 solutionID = sys.argv[2]
 simulation = SIMULATION(directOrGUI, solutionID)

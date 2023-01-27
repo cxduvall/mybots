@@ -1,0 +1,53 @@
+<robot name = "robot">
+    <link name="Pillar">
+        <inertial>
+            <origin xyz="4 4 0" rpy="0 0 0"/>
+            <mass value="1" />
+            <inertia ixx="100" ixy="0" ixz="0" iyy="100" iyz="0" izz="100" />
+        </inertial>
+        <visual>
+            <origin xyz="4 4 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.5 0.5 5" />
+            </geometry>
+            <material name="Cyan">
+                <color rgba="0 1.0 1.0 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="4 4 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.5 0.5 5" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="Table">
+        <inertial>
+            <origin xyz="4 4 5" rpy="0 0 0"/>
+            <mass value="1" />
+            <inertia ixx="100" ixy="0" ixz="0" iyy="100" iyz="0" izz="100" />
+        </inertial>
+        <visual>
+            <origin xyz="4 4 5" rpy="0 0 0"/>
+            <geometry>
+                <box size="2 2 0.5" />
+            </geometry>
+            <material name="Cyan">
+                <color rgba="0 1.0 1.0 1.0"/>
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="4 4 5" rpy="0 0 0"/>
+            <geometry>
+                <box size="2 2 0.5" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="Pillar_Table" type="revolute">
+       <parent link="Pillar"/>
+       <child  link="Table"/>
+       <origin rpy="0 0 0" xyz="0 0 10" />
+     <axis xyz="1 0 0"/>
+       <limit effort="0.0" lower="-3.14159" upper="3.14159" velocity="0.0"/>
+    </joint>
+</robot>

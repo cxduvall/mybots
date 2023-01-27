@@ -18,7 +18,7 @@ SDF_FILETYPE  = 0
 
 URDF_FILETYPE = 1
 
-NNDF_FILETYPE   = 2
+NNDF_FILETYPE = 2
 
 # global availableLinkIndex
 
@@ -46,6 +46,7 @@ def Get_Touch_Sensor_Value_For_Link(linkName):
 
     touchValue = -1.0
 
+    #print("link names to indices:", linkNamesToIndices)
     desiredLinkIndex = linkNamesToIndices[linkName]
 
     pts = p.getContactPoints()
@@ -59,6 +60,14 @@ def Get_Touch_Sensor_Value_For_Link(linkName):
             touchValue = 1.0
 
     return touchValue
+
+def LinkNamesToIndices():
+    global linkNamesToIndices
+    return linkNamesToIndices
+
+def JointNamesToIndices():
+    global jointNamesToIndices
+    return jointNamesToIndices
 
 def Prepare_Link_Dictionary(bodyID):
 
@@ -106,7 +115,7 @@ def Prepare_To_Simulate(bodyID):
 
     Prepare_Joint_Dictionary(bodyID)
 
-def Send_Cube(name="default",pos=[0,0,0],size=[1,1,1]):
+def Send_Cube(name="default",pos=[0,0,0],size=[1,1,1], matName="Cyan", matRGBA=[0.0,1.0,1.0,1.0]):
 
     global availableLinkIndex
 
@@ -120,7 +129,7 @@ def Send_Cube(name="default",pos=[0,0,0],size=[1,1,1]):
 
         links.append(link)
     else:
-        link = LINK_URDF(name,pos,size)
+        link = LINK_URDF(name,pos,size, matName, matRGBA)
 
         links.append(link)
 
@@ -164,6 +173,20 @@ def Set_Motor_For_Joint(bodyIndex,jointName,controlMode,targetPosition,maxForce)
         controlMode    = controlMode,
 
         targetPosition = targetPosition,
+
+        force          = maxForce)
+
+def Set_Motor_Velocity_For_Joint(bodyIndex,jointName,controlMode,targetVelocity,maxForce):
+
+    p.setJointMotorControl2(
+
+        bodyIndex      = bodyIndex,
+
+        jointIndex     = jointNamesToIndices[jointName],
+
+        controlMode    = controlMode,
+
+        targetVelocity = targetVelocity,
 
         force          = maxForce)
 

@@ -15,4 +15,12 @@ class MOTOR:
             controlMode = p.POSITION_CONTROL,
             targetPosition = angle,
             maxForce = c.maxForce)
+
+    def Set_Speed(self, speed, robot, maxForce):
+        pyrosim.Set_Motor_Velocity_For_Joint(
+            bodyIndex = robot,
+            jointName = self.jointName,
+            controlMode = p.VELOCITY_CONTROL,
+            targetVelocity = speed,
+            maxForce = maxForce)
             

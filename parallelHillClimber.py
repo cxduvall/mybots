@@ -5,8 +5,13 @@ import os
 
 class PARALLEL_HILL_CLIMBER:
     def __init__(self):
+        #print("here")
         os.system("rm brain*.nndf")
+        #print("rm fitness now...")
         os.system("rm fitness*.txt")
+        #print("rm world now...")
+        os.system("rm world*.sdf")
+        #print("done")
         self.nextAvailableID = 0
         self.parents = {}
         for i in range(c.populationSize):
@@ -18,15 +23,15 @@ class PARALLEL_HILL_CLIMBER:
             
         for currentGeneration in range(c.numberOfGenerations):
             if currentGeneration == 0:
-                self.Evolve_For_One_Generation(False)
+                self.Evolve_For_One_Generation(currentGeneration + 1, False)
             else:
-                self.Evolve_For_One_Generation()
+                self.Evolve_For_One_Generation(currentGeneration + 1)
 
-    def Evolve_For_One_Generation(self, direct=True):
+    def Evolve_For_One_Generation(self, generation, direct=True):
         self.Spawn()
         self.Mutate()
         self.Evaluate(self.children)
-        self.Select()
+        self.Select(generation)
         self.Print()
 
     def Evaluate(self, solutions):
@@ -44,7 +49,8 @@ class PARALLEL_HILL_CLIMBER:
             if best is None or fitness < best:
                 best = fitness
                 bestKey = key
-        print("BEST KEY:", bestKey, best)
+        #("BEST KEY:", bestKey, best)
+        self.worstFitnessExample.Evaluate(False)
         self.parents[bestKey].Evaluate(False)
 
     def Print(self):
@@ -66,12 +72,24 @@ class PARALLEL_HILL_CLIMBER:
         for child in self.children.values():
             child.Mutate()
 
-    def Select(self):
+    def Select(self, generation):
+        worstFitness = None
+        worstFitnessExample = None
         for key in self.parents.keys():
             #print("\nKEY: "+str(key))
             #print("PARENTS: " + str(self.parents))
             #print("CHILDREN: " + str(self.children))
             parent = self.parents[key]
             child = self.children[key]
-            if parent.Get_Fitness() > child.Get_Fitness():
+            parentFitness = parent.Get_Fitness()
+            childFitness = child.Get_Fitness()
+            if parentFitness > childFitness:
                 self.parents[key] = child
+            if worstFitness is None or parentFitness > worstFitness:
+                worstFitness = parentFitness
+                worstFitnessExample = parent
+            if childFitness > worstFitness:
+                worstFitness = childFitness
+                worstFitnessExample = child 
+        if generation == 1:
+            self.worstFitnessExample = worstFitnessExample

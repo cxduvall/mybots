@@ -7,7 +7,7 @@ frontLegSensorValues = np.load("data/frontLegSensorValues.npy")
 backTargetAngles = np.load("data/backTargetAngles.npy")
 frontTargetAngles = np.load("data/frontTargetAngles.npy")
 
-print(backLegSensorValues)
+#print(backLegSensorValues)
 
 plt.plot(backTargetAngles, label="Back Target Angles")
 plt.plot(frontTargetAngles, label="Front Target Angles")

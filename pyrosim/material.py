@@ -2,13 +2,14 @@ from pyrosim.commonFunctions import Save_Whitespace
 
 class MATERIAL: 
 
-    def __init__(self):
+    def __init__(self, name="Cyan", rgba=[0.0,1.0,1.0,1.0]):
 
         self.depth  = 3
 
-        self.string1 = '<material name="Cyan">'
+        self.string1 = '<material name="' + name + '">'
 
-        self.string2 = '    <color rgba="0 1.0 1.0 1.0"/>'
+        rgbaStr = " ".join(list(map(lambda x: str(x), rgba)))
+        self.string2 = '    <color rgba="' + rgbaStr + '"/>'
 
         self.string3 = '</material>'
 

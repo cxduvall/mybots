@@ -69,7 +69,7 @@ class ROBOT:
         yPos = basePosition[1]
         zPos = basePosition[2]
         distance = math.sqrt((xPos**2) + (yPos**2))
-        fitness = zPos * -1
+        fitness = distance * -1
         with open("tmp" + str(self.myID) + ".txt", "w") as f:
             f.write(str(fitness))
         os.system("mv tmp" + str(self.myID) + ".txt fitness" + str(self.myID) + ".txt")

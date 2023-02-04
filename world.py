@@ -6,7 +6,7 @@ import math
 class WORLD:
     def __init__(self, worldId, fps):
         self.fps = fps
-        self.planeId = p.loadURDF("plane.urdf", globalScaling = 0.013)
+        self.planeId = p.loadURDF("plane.urdf")
         #self.planeId2 = p.loadURDF("plane.urdf", globalScaling = 0.02)
         #self.planeId3 = p.loadURDF("plane.urdf", globalScaling = 0.02)
         #self.platformId = p.loadURDF("platform" + worldId + ".urdf")
@@ -16,7 +16,7 @@ class WORLD:
         #p.resetBasePositionAndOrientation(self.planeId2, [0,5.5,0], [0,0,0,1])
         #p.resetBasePositionAndOrientation(self.planeId3, [0,11,0], [0,0,0,1])
 
-        self.set_angular_speed(1,0,0)
+        #self.set_angular_speed(1,0,0)
 
 
     def get_orientation(self):

@@ -24,12 +24,12 @@ class PARALLEL_HILL_CLIMBER:
         for currentGeneration in range(c.numberOfGenerations):
             if currentGeneration == 0:
                 self.Evolve_For_One_Generation(currentGeneration + 1, False)
-            else:
-                self.Evolve_For_One_Generation(currentGeneration + 1)
+            #else:
+                #self.Evolve_For_One_Generation(currentGeneration + 1)
 
     def Evolve_For_One_Generation(self, generation, direct=True):
         self.Spawn()
-        self.Mutate()
+        #self.Mutate()
         self.Evaluate(self.children)
         self.Select(generation)
         self.Print()
@@ -50,8 +50,12 @@ class PARALLEL_HILL_CLIMBER:
                 best = fitness
                 bestKey = key
         #("BEST KEY:", bestKey, best)
-        self.worstFitnessExample.Evaluate(False)
-        self.parents[bestKey].Evaluate(False)
+
+        for parent in self.parents.values():
+            parent.Evaluate(False)
+
+        #self.worstFitnessExample.Evaluate(False)
+        #self.parents[bestKey].Evaluate(False)
 
     def Print(self):
         print('\n')

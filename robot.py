@@ -23,8 +23,7 @@ class ROBOT:
     def Prepare_To_Sense(self, numFrames):
         self.sensors = {}
         for linkName in pyrosim.LinkNamesToIndices():
-            if linkName not in ["Pillar", "Table", "Base"]:
-                self.sensors[linkName] = SENSOR(linkName, numFrames)
+            self.sensors[linkName] = SENSOR(linkName, numFrames)
 
     def Prepare_To_Act(self, numFrames):
         self.motors = {}

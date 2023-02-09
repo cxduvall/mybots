@@ -1,6 +1,6 @@
 import math
 
-gravityStrength = 30
+gravityStrength = 10
 numSecs = 10
 fps = 60
 
@@ -11,7 +11,7 @@ phaseOffset = 0
 maxForce = 500
 
 numberOfGenerations = 1
-populationSize = 1
+populationSize = 10
 
 numSensorNeurons = 8
 numMotorNeurons = 8

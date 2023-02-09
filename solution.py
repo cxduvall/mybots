@@ -7,6 +7,7 @@ import constants as c
 import random
 import math
 import sys
+import csv
 
 class SOLUTION:
     def __init__(self, id):
@@ -154,13 +155,13 @@ class SOLUTION:
         return index
 
     def Create_Body(self):
-        seed = 6518565134699257740 #random.randrange(sys.maxsize)
+        seed = random.randrange(sys.maxsize) #random.randrange(sys.maxsize) # 6518565134699257740 - 2 together/apart if just 2 parts # 7978656969469434807 for floating + ground when 3-10 links
         print("RANDOM SEED:", seed)
-        self.random = random.Random(6518565134699257740)
+        self.random = random.Random(seed)
 
         pyrosim.Start_URDF("body" + str(self.myID) + ".urdf")
 
-        self.numLinks = 2 #self.rng.randint(3,10)
+        self.numLinks = self.random.randint(3,10) #2 #self.rng.randint(3,10)
         self.sensors = [0] * self.numLinks
         self.numSensors = 0
         self.numJoints = self.numLinks - 1
@@ -176,7 +177,6 @@ class SOLUTION:
         JGlobPos = []
         JAxes = []
         JParentCubeIndices = []
-
         JFaceDims = []
         JFaceDirs = []
 
@@ -192,12 +192,16 @@ class SOLUTION:
                 jointPosOfNewJoint = self.jointPosOfJointOnCube(faceDim, faceDir,
                     lwhArr[prevCubeIndex], cubeJointPosArr[prevCubeIndex])
                 
+                #'''
                 # random joint axis (in *any* direction!)
                 jointAxis = []
                 for j in range(3):
                     jointAxis.append(self.random.random())
                 # normalize the joint axis
                 jointAxis = self.normalize(jointAxis)
+                #'''
+                jointAxis = random.choice([[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]])
+                print("jointAxis:", jointAxis)
 
                 prevJointInd = cubeParentJIndexArr[prevCubeIndex]
 
@@ -230,17 +234,8 @@ class SOLUTION:
                 cubeParentJIndexArr.append(parentJIndex) # assume last-added joint is to this cube
                 # cubeJointPosArr -- make cube joint-pos according to lwh + dim/dir of parent j
                 # use parent dim/dir, and new lwh
-                lwhToUse = [l,w,h]
                 cubeJointPos = self.jointPosOfJointOnCube(JFaceDims[-1], JFaceDirs[-1],
-                    lwhToUse, [0,0,0], isRandom=False)
-                print("\nFINDING NEW CUBE CENTER wrt its joint:",
-                    JFaceDims[-1],
-                    JFaceDirs[-1],
-                    lwhToUse,
-                    [0,0,0],
-                    "->",
-                    cubeJointPos,
-                    "\n")
+                    [l,w,h], [0,0,0], isRandom=False)
                 cubeJointPosArr.append(cubeJointPos) # treat the joint as a cube centered at itself, lol
                 # cubeGlobPosArr -- global position -- in terms of parent joint global position
                 cubeGlobPosArr.append(self.vecAdd(cubeJointPos, JGlobPos[parentJIndex]))
@@ -249,45 +244,114 @@ class SOLUTION:
                 cubeGlobPosArr.append([0,0,0])
                 cubeParentJIndexArr.append(-1)
 
+        
         # TODO: adjust global positions of joints/cubes (and joint pos of first cube and its joint(s)) for min z of cube bottoms
         minZ = self.findLowestCubeBottom(cubeGlobPosArr, lwhArr)
         addZ = 0
         aboveGround = 0.5
         if minZ < aboveGround:
             addZ = aboveGround - minZ
-        # TODO actually add to j/c global positions (and joint pos of first cube and its joint(s))
+        # actually add to j/c global positions (and joint pos of first cube and its joint(s))
         # involved arrs: JGlobPos, cubeGlobPosArr, cubeJointPosArr[0], JPos[0]
         for k in range(self.numJoints):
             JGlobPos[k][2] += addZ
         for k in range(self.numLinks):
             cubeGlobPosArr[k][2] += addZ
         cubeJointPosArr[0][2] += addZ
-        JPos[0][2] += addZ
+        # addZ for all joints on the first cube
+        for k in range(self.numJoints):
+            if JParentCubeIndices[k] == 0:
+                JPos[k][2] += addZ
+        
+
+        # cube info dict
+        cubeInfo = [None] * self.numLinks
+        for c in range(self.numLinks):
+            cubeInfo[c] = {"parentJ": cubeParentJIndexArr[c],
+                "globPos": cubeGlobPosArr[c], "jointPos": cubeJointPosArr[c],
+                "lwh": lwhArr[c]}
+
+        jointInfo = [None] * self.numJoints
+        for t in range(self.numJoints):
+            jointInfo[t] = {"pos": JPos[t], "globPos": JGlobPos[t],
+                "axis": JAxes[t], "parentCubeIndex": JParentCubeIndices[t],
+                "faceDims": JFaceDims[t], "faceDirs": JFaceDirs[t]}
+
+
+        print("\nCUBE INFO:", cubeInfo)
+        print("\nJOINT INFO:", jointInfo)
+
+        cubeFieldNames = cubeInfo[0].keys()
+        with open('cubes_' + str(seed) + '.csv', 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=cubeFieldNames)
+            writer.writeheader()
+            writer.writerows(cubeInfo)
+
+        jointFieldNames = jointInfo[0].keys()
+        with open('joints_' + str(seed) + '.csv', 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=jointFieldNames)
+            writer.writeheader()
+            writer.writerows(jointInfo)
 
         # guarantee at least 1 sensor
         if self.numSensors < 1:
             self.sensors[self.random.randint(0, len(self.sensors) - 1)] = 1
-
-        # TODO - 2nd loop, actually adds the joints/links
+            self.numSensors += 1
+        print("\nself.numSensors:", self.numSensors)
         
-        for j in range(len(cubeGlobPosArr)):
+        for j in range(self.numLinks): # self.numLinks
             name = "Link"+str(j)
             pos = cubeJointPosArr[j]
+
+            '''
+            if j == 0:
+                c = [1.0, 0.0, 0.0]
+            elif j == 1:
+                c = [0.0, 1.0, 0.0]
+            elif j == 2:
+                c = [0.0, 0.0, 1.0]
+            elif j == 3:
+                c = [0.0, 0.0, 0.0]
+            elif j == 4:
+                c = [1.0, 1.0, 1.0]
+
+            if j == 0 or j == 3:
+                pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
+                        matName=str(j), matRGBA=[c[0],c[1],c[2],1.0])
+            '''
+
+            '''
+            if j == 0:
+                pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
+                    matName="Main", matRGBA=[1.0,0.0,0.0,1.0])
+            elif JParentCubeIndices[cubeParentJIndexArr[j]] == 0:
+                pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
+                    matName="Secondary", matRGBA=[1.0,0.5,0.5,1.0])
+            else:
+                pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
+                    matName="Blue", matRGBA=[0.0,0.5,1.0,1.0])
+            '''
+            #'''
             if self.sensors[j]:
                 pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
                     matName="Green", matRGBA=[0.0,1.0,0.0,1.0])
             else:
                 pyrosim.Send_Cube(name=name, pos=pos, size=lwhArr[j],
                     matName="Blue", matRGBA=[0.0,0.5,1.0,1.0])
+            #'''
 
-        for k in range(len(JPos)): # k is a joint-index
+        for k in range(self.numJoints): # self.numJoints #3 # k is a joint-index
             parentInd = JParentCubeIndices[k]
             childInd = self.getChildCubeIndex(k, cubeParentJIndexArr)
             parentName = "Link" + str(parentInd)
             childName = "Link" + str(childInd)
             name = parentName + "_" + childName
             pos = JPos[k]
+
+            #if k == 2:
             pyrosim.Send_Joint(name,parentName,childName,"revolute",pos,jointAxis=JAxes[k])
+
+        # TODO remove
 
         self.jointParentLinks = JParentCubeIndices
         self.jointChildLinks = list(map(lambda q: self.getChildCubeIndex(q,cubeParentJIndexArr),
@@ -307,12 +371,13 @@ class SOLUTION:
         j = 0
         numSensorNeurons = 0
         for i in range(self.numLinks):
-            if self.sensors[i]:
-                pyrosim.Send_Sensor_Neuron(name = j, linkName = "Link"+str(i))
-                j += 1
-                numSensorNeurons += 1
+            #if self.sensors[i] and (i == 0 or i == 3): # TODO rm
+            pyrosim.Send_Sensor_Neuron(name = j, linkName = "Link"+str(i))
+            j += 1
+            numSensorNeurons += 1
 
         for i in range(self.numJoints):
+            #if i == 2: # TODO rm
             pyrosim.Send_Motor_Neuron( name = j,
                 jointName="Link"+str(self.jointParentLinks[i])+"_Link"+str(self.jointChildLinks[i]))
             j += 1

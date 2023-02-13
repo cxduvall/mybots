@@ -2,9 +2,10 @@ from solution import SOLUTION
 import constants as c
 import copy
 import os
+import random
 
 class PARALLEL_HILL_CLIMBER:
-    def __init__(self):
+    def __init__(self, randSeed, showFirst):
         #print("here")
         os.system("rm brain*.nndf")
         #print("rm fitness now...")
@@ -14,29 +15,36 @@ class PARALLEL_HILL_CLIMBER:
         #print("done")
         self.nextAvailableID = 0
         self.parents = {}
+        self.myRandom = random.Random(randSeed)
         for i in range(c.populationSize):
-            self.parents[i] = SOLUTION(self.nextAvailableID)
+            self.parents[i] = SOLUTION(self.nextAvailableID, self.myRandom)
             self.nextAvailableID += 1
+        self.showFirst = showFirst
 
     def Evolve(self):
-        self.Evaluate(self.parents)
-            
+        self.evaluations = 0
+        firstDirect = not self.showFirst
+        self.Evaluate(self.parents, direct=firstDirect, firstGen=True)
+        self.initBestFitness(firstDirect)
+        
         for currentGeneration in range(c.numberOfGenerations):
-            if currentGeneration == 0:
-                self.Evolve_For_One_Generation(currentGeneration + 1, False)
-            #else:
-                #self.Evolve_For_One_Generation(currentGeneration + 1)
+            self.Evolve_For_One_Generation(currentGeneration + 1)
+
+        return self.bestFitness
 
     def Evolve_For_One_Generation(self, generation, direct=True):
         self.Spawn()
-        #self.Mutate()
-        self.Evaluate(self.children)
+        self.Evaluate(self.children, direct=direct)
         self.Select(generation)
         self.Print()
 
-    def Evaluate(self, solutions):
+    def Evaluate(self, solutions, firstGen=False, direct=True):
+        print("\nEVALUATING:", self.evaluations)
+        print("direct:", direct, "\n")
+        self.evaluations += 1
+        
         for i in range(c.populationSize):
-            solutions[i].Start_Simulation()
+            solutions[i].Start_Simulation(direct=direct, firstGen=firstGen) # handles mutation
         for i in range(c.populationSize):
             solutions[i].Wait_For_Simulation_To_End()
 
@@ -52,7 +60,7 @@ class PARALLEL_HILL_CLIMBER:
         #("BEST KEY:", bestKey, best)
 
         for parent in self.parents.values():
-            parent.Evaluate(False)
+            parent.Evaluate(direct=False)
 
         #self.worstFitnessExample.Evaluate(False)
         #self.parents[bestKey].Evaluate(False)
@@ -72,13 +80,19 @@ class PARALLEL_HILL_CLIMBER:
             self.children[key].Set_ID(self.nextAvailableID)
             self.nextAvailableID += 1
 
-    def Mutate(self):
-        for child in self.children.values():
-            child.Mutate()
+    def initBestFitness(self, firstDirect):
+        self.bestFitness = []
+        bestFitness = None
+        for key in self.parents.keys():
+            parent = self.parents[key]
+            parentFitness = parent.Get_Fitness()
+            if bestFitness is None or parentFitness < bestFitness:
+                bestFitness = parentFitness
+        self.bestFitness.append(-1 * bestFitness)
 
     def Select(self, generation):
-        worstFitness = None
-        worstFitnessExample = None
+        bestFitness = None
+        bestFitnessExample = None
         for key in self.parents.keys():
             #print("\nKEY: "+str(key))
             #print("PARENTS: " + str(self.parents))
@@ -89,11 +103,10 @@ class PARALLEL_HILL_CLIMBER:
             childFitness = child.Get_Fitness()
             if parentFitness > childFitness:
                 self.parents[key] = child
-            if worstFitness is None or parentFitness > worstFitness:
-                worstFitness = parentFitness
-                worstFitnessExample = parent
-            if childFitness > worstFitness:
-                worstFitness = childFitness
-                worstFitnessExample = child 
-        if generation == 1:
-            self.worstFitnessExample = worstFitnessExample
+            if bestFitness is None or parentFitness < bestFitness:
+                bestFitness = parentFitness
+                bestFitnessExample = parent
+            if childFitness < bestFitness:
+                bestFitness = childFitness
+                bestFitnessExample = child
+        self.bestFitness.append(-1 * bestFitness)

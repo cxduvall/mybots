@@ -18,7 +18,7 @@ class ROBOT:
         os.system("rm brain" + str(id) + ".nndf")
         os.system("rm body" + str(id) + ".urdf")
         self.myID = id
-        print("done w robot!")
+        #print("done w robot!")
 
     def Prepare_To_Sense(self, numFrames):
         self.sensors = {}

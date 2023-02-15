@@ -38,31 +38,37 @@ class Joint:
         pass
 
 class SOLUTION:
-    def __init__(self, id, parentRandom):
+    def __init__(self, id, randseed):
         self.myID = id
         self.minLinks = 3
-        self.maxLinks = 10
-        self.body_mutation_rate = 0.3
-        self.sensorProbability = 0.5
+        self.maxLinks = 5
+        self.body_mutation_rate = 0.0
+        self.sensorProbability = 0.8
         self.addCubeProbability = 0.1
-        self.removeCubeProbability = 0.4 # must be between 0 and 1 - addCubeProbability
-        self.parentRandom = parentRandom
-        self.maxHeight = 7
+        self.removeCubeProbability = 0.9 # must be between 0 and 1 - addCubeProbability
+        self.seed_random(randseed)
+        self.maxHeight = 3
+        self.minL = 0.5
+        self.minW = 0.5
+        self.minH = 0.5
+        self.maxL = 4
+        self.maxW = 4
+        self.maxH = 4
 
-    def Start_Simulation(self, direct=True, firstGen=True):
+    def Start_Simulation(self, direct=True, firstGen=True, numSecs=c.numSecs):
 
         self.Create_World()
         if firstGen:
-            self.Create_Body(self.parentRandom)
+            self.Create_Body()
             self.Create_Brain()
         else:
             self.Mutate()
 
         #print("about to syscall simulate.py")
         if direct:
-            command = "python3 simulate.py DIRECT " + str(self.myID) + " 2" # 2&>1 &
+            command = "python3 simulate.py " + str(numSecs) + " DIRECT " + str(self.myID) + " 2&" # 2&>1 &
         else:
-            command = "python3 simulate.py GUI " + str(self.myID) + " 2" # 2&>1 &
+            command = "python3 simulate.py " + str(numSecs) + " GUI " + str(self.myID) + " 2&" # 2&>1 &
         #print("Command:", command)
         os.system(command)
 
@@ -82,12 +88,23 @@ class SOLUTION:
         if self.fitness is not None:
             return self.fitness
 
-    def Evaluate(self, direct=True):
-        self.Start_Simulation(direct)
+    def Evaluate(self, direct=True, viewLen=c.numSecs):
+        self.Start_Simulation(direct=direct, numSecs=viewLen)
         self.Wait_For_Simulation_To_End(direct)
 
     def Set_ID(self, id):
         self.myID = id
+
+    def adjustChildJointPos(self, cubeIndex, cubesCopy, jointsCopy):
+        # TODO assume cubesCopy has the correct lwh, jointPos, globPos for the cube, but jointsCopy isn't updated accordingly -- just adjust the jointPos/globPos for the child joints.
+        pass
+
+    def recalc_globPos(self, cubeIndex, cubesCopy, jointsCopy):
+        # TODO cube lwh already modified in cubesCopy
+        # TODO cube jointPos already adjusted in cubesCopy
+        # TODO adjust its jointPos
+        # TODO after this, if returns [cubesCopy, jointsCopy], commit the changes -- otherwise (returned None) yielded an overlap or height exceeded, and should try again
+        pass
 
     def mutate_brain(self):
         # tweak a neuron
@@ -107,11 +124,15 @@ class SOLUTION:
         self.sensors.append(0) # updated below
         # add cube and its joint to respective arrs -- updates self.sensors and self.numSensors redundantly
         while True:
+            # TODO handle sensor removal
+            sensorNum = self.numSensors
             self.create_joint()
-            self.create_cube(-1) # chooses if sensor...
-            if self.get_height() > self.maxHeight:
+            cubeSuccess = self.create_cube(-1) # chooses if sensor...
+            if (not cubeSuccess) or self.get_height() > self.maxHeight:
                 self.cubes.pop(-1)
                 self.joints.pop(-1)
+                self.numSensors = sensorNum
+                self.sensors[-1] = 0
             else:
                 break
         self.adjustZPositions()
@@ -155,11 +176,14 @@ class SOLUTION:
     def remove_cube_mutation(self):
         
         # identify a main cube index to remove -- removed index cannot be 0 (otherwise, return)
-        index = self.random.randint(0, len(self.cubes) - 1)
         #print("\nSELF.CUBES BEFORE REMOVAL:", self.cubes)
-        if index == 0:
+        #if index == 0:
             #print("can't delete: one cube left and/or core link")
+        #    return
+        if len(self.cubes) == 1:
             return
+
+        index = self.random.randint(1, len(self.cubes) - 1)
 
         # identify a list of all deleted cube indices
         sensorsToDel = [0] * self.numSensors
@@ -335,7 +359,7 @@ class SOLUTION:
     def Mutate(self):
         self.mutate_ops = []
         mutationNum = 0
-        while self.random.random() < self.body_mutation_rate: # TODO make if
+        if self.random.random() < self.body_mutation_rate: # TODO make if
             self.mutate_body_logic(mutationNum)
             mutationNum += 1
         self.write_urdf()
@@ -428,6 +452,31 @@ class SOLUTION:
             faceDim=faceDim,
             faceDir=faceDir))
 
+    # inspired by https://stackoverflow.com/questions/3269434/whats-the-most-efficient-way-to-test-if-two-ranges-overlap
+    # (StartA <= EndB) and (EndA >= StartB)
+    def intervals_overlap(self, start1, end1, start2, end2):
+        return (start1 <= end2) and (end1 >= start2)
+
+    def cubes_overlap(self, globPos1, lwh1, globPos2, lwh2):
+        x1, y1, z1 = globPos1
+        x2, y2, z2 = globPos2
+        l1, w1, h1 = lwh1
+        l2, w2, h2 = lwh2
+        x_overlap = self.intervals_overlap(x1-l1/2, x1+l1/2,
+            x2-l2/2, x2+l2/2)
+        y_overlap = self.intervals_overlap(y1-w1/2, y1+w1/2,
+            y2-w2/2, y2+w2/2)
+        z_overlap = self.intervals_overlap(z1-h1/2, z1+h1/2,
+            z2-h2/2, z2+h2/2)
+        return x_overlap and y_overlap and z_overlap
+
+    def overlaps_with_any_existing_cube(self, globPos, lwh):
+        for cube in self.cubes:
+            if self.cubes_overlap(globPos, lwh, cube.globPos, cube.lwh):
+                return True
+        return False
+
+    # return True if works, false if didn't bc of overlap
     def create_cube(self, i):
 
         # now generate info about the cube!!
@@ -437,9 +486,9 @@ class SOLUTION:
             self.numSensors += 1
         #else:
             #print("generated non-sensor cube.")
-        l = self.random.uniform(0.5, 4)
-        w = self.random.uniform(0.5, 4)
-        h = self.random.uniform(0.5, 4)
+        l = self.random.uniform(self.minL, self.maxL)
+        w = self.random.uniform(self.minW, self.maxW)
+        h = self.random.uniform(self.minH, self.maxH)
         
         # add the actual cube
         if i != 0:
@@ -457,15 +506,24 @@ class SOLUTION:
             # cubeGlobPosArr -- global position -- in terms of parent joint global position
             cubeGlobPos = self.vecAdd(cubeJointPos, self.joints[parentJIndex].globPos)
 
-            self.cubes.append(Cube(lwh=[l,w,h],
-                jointPos=cubeJointPos,
-                globPos=cubeGlobPos,
-                parentJIndex=parentJIndex))
+            lwh = [l,w,h]
+
+            if self.overlaps_with_any_existing_cube(cubeGlobPos, lwh):
+                self.cubes.append("OVERLAP")
+                return False
+            else:
+                self.cubes.append(Cube(lwh=lwh,
+                    jointPos=cubeJointPos,
+                    globPos=cubeGlobPos,
+                    parentJIndex=parentJIndex))
+                return True
         else: # first cube, no parent joint
             self.cubes.append(Cube(lwh=[l,w,h],
                 jointPos=[0,0,0],
                 globPos=[0,0,0],
                 parentJIndex=-1))
+
+            return True
 
     def adjustZPositions(self):
         # adjust global positions of joints/cubes (and joint pos of first cube and its joint(s)) for min z of cube bottoms
@@ -495,9 +553,9 @@ class SOLUTION:
         for k in range(len(self.joints)):
             self.joints[k].print()
 
-    def seed_random(self, parentRandom):
+    def seed_random(self, randseed):
         #random.randrange(sys.maxsize)
-        self.randSeed = parentRandom.randrange(sys.maxsize)#3384984311908638331 #5933355704700017414 #6910913391251108116 #4075562753625725340 #8513075665796686122 #6150022990742915642 # 6518565134699257740 - 2 together/apart if just 2 parts # 7978656969469434807 for floating + ground when 3-10 links
+        self.randSeed = randseed#parentRandom.randrange(sys.maxsize)#3384984311908638331 #5933355704700017414 #6910913391251108116 #4075562753625725340 #8513075665796686122 #6150022990742915642 # 6518565134699257740 - 2 together/apart if just 2 parts # 7978656969469434807 for floating + ground when 3-10 links
         print("\nRANDOM SEED:", self.randSeed, "\n")
         self.random = random.Random(self.randSeed)
 
@@ -540,8 +598,7 @@ class SOLUTION:
     def get_height(self):
         return self.findHighestCubeTop() - self.findLowestCubeBottom()
 
-    def initialize_body_logic(self, parentRandom):
-        self.seed_random(parentRandom)
+    def initialize_body_logic(self):
 
         self.numLinks = self.random.randint(self.minLinks, self.maxLinks) #2 #self.rng.randint(3,10)
         self.sensors = [0] * self.numLinks
@@ -551,14 +608,21 @@ class SOLUTION:
         self.cubes = []
         self.joints = []
 
+        # TODO if create_cube returns false, try again...
         for i in range(self.numLinks):
+            #self.overlaps_with_any_existing_cube
+
             while True:
                 if i != 0:
                     self.create_joint()
-                self.create_cube(i)
-                if self.get_height() > self.maxHeight:
-                    self.joints.pop(-1) # only run this line when at least 2 cubes bc maxHeight > what 1 cube can be
+                sensorNum = self.numSensors
+                cubeSuccess = self.create_cube(i)
+                if (not cubeSuccess) or self.get_height() > self.maxHeight:
+                    if i != 0:
+                        self.joints.pop(-1) # only run this line when at least 2 cubes bc maxHeight > what 1 cube can be
                     self.cubes.pop(-1)
+                    self.numSensors = sensorNum
+                    self.sensors[i] = 0
                 else:
                     break
 
@@ -567,8 +631,8 @@ class SOLUTION:
 
         self.record_joint_parents_children()
         
-    def Create_Body(self, parentRandom):
-        self.initialize_body_logic(parentRandom)
+    def Create_Body(self):
+        self.initialize_body_logic()
         self.write_urdf()
 
     def initialize_brain_logic(self):

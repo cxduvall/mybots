@@ -9,18 +9,19 @@ import time
 import math
 
 class SIMULATION:
-    def __init__(self, directOrGUI, id):
+    def __init__(self, directOrGUI, id, numSecs):
         if directOrGUI == "DIRECT":
             self.physicsClient = p.connect(p.DIRECT)
         else:
             self.physicsClient = p.connect(p.GUI)
-            p.resetDebugVisualizerCamera( cameraDistance=20, cameraYaw=45, cameraPitch=-45, cameraTargetPosition=[0,0,0])
+            p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
+            p.resetDebugVisualizerCamera( cameraDistance=10, cameraYaw=45, cameraPitch=-45, cameraTargetPosition=[0,0,0])
         self.directOrGUI = directOrGUI
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         #print("preparing to simulate! id:", id)
         #pyrosim.Prepare_To_Simulate(id) # doesn't make sense...load, then sim w *that* id
         #print("success!")
-        self.numFrames = math.floor(c.numSecs * c.fps)
+        self.numFrames = math.floor(numSecs * c.fps)
         self.world = WORLD(id, c.fps)
         self.robot = ROBOT(self.numFrames, id)
         #print("ABOUT TO MAKE PLATFORM")
@@ -29,7 +30,7 @@ class SIMULATION:
         p.setGravity(0,0, -1 * c.gravityStrength)
 
     def Run(self):
-        print("actually running simulation!")
+        #print("actually running simulation!")
         for i in range(self.numFrames): # DONE
             #print("step:", i)
 

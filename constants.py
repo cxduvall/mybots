@@ -9,9 +9,10 @@ phaseOffset = 0
 
 maxForce = 500
 
-numberOfGenerations = 1
-populationSize = 10
-numSecs = 2
+numberOfGenerations = 100
+populationSize = 20
+numSecs = 10
+viewSecs = 10 # TODO not implemented
 numRuns = 1
 
 numSensorNeurons = 8

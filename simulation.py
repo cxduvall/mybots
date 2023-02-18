@@ -3,7 +3,6 @@ import pyrosim.pyrosim as pyrosim
 import pybullet_data
 from world import WORLD
 from robot import ROBOT
-from myplatform import PLATFORM
 import constants as c
 import time
 import math

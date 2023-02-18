@@ -42,7 +42,7 @@ class SOLUTION:
         self.myID = id
         self.minLinks = 3
         self.maxLinks = 5
-        self.body_mutation_rate = 0.0
+        self.body_mutation_rate = 1.0
         self.sensorProbability = 0.8
         self.addCubeProbability = 0.1
         self.removeCubeProbability = 0.9 # must be between 0 and 1 - addCubeProbability
@@ -54,15 +54,22 @@ class SOLUTION:
         self.maxL = 4
         self.maxW = 4
         self.maxH = 4
+        self.actualBodyMutations = 0
 
-    def Start_Simulation(self, direct=True, firstGen=True, numSecs=c.numSecs):
+    def Start_Simulation(self, command, direct=True, numSecs=c.numSecs):
+        # command can be "create", "mutate", or "view"
 
         self.Create_World()
-        if firstGen:
+        if command == "create":
             self.Create_Body()
             self.Create_Brain()
-        else:
-            self.Mutate()
+        elif command == "mutate":
+            self.Mutate() # TODO change back?
+            #self.Create_Body()
+            #self.Create_Brain()
+        else: # command == "view"
+            self.write_urdf()
+            self.write_nndf()
 
         #print("about to syscall simulate.py")
         if direct:
@@ -88,8 +95,8 @@ class SOLUTION:
         if self.fitness is not None:
             return self.fitness
 
-    def Evaluate(self, direct=True, viewLen=c.numSecs):
-        self.Start_Simulation(direct=direct, numSecs=viewLen)
+    def Evaluate(self, command, direct=True, viewLen=c.numSecs):
+        self.Start_Simulation(command, direct=direct, numSecs=viewLen)
         self.Wait_For_Simulation_To_End(direct)
 
     def Set_ID(self, id):
@@ -147,6 +154,9 @@ class SOLUTION:
             self.mutate_ops.append("add_sensor_link")
         # TODO if append a sensor link (or not), do the added link/joint numbers correspond??
 
+        print("\n---actually added cube!")
+        self.actualBodyMutations += 1
+
     def rm_indices(self, arr, toDel):
         origIndex = 0
         arrIndex = 0
@@ -182,6 +192,8 @@ class SOLUTION:
         #    return
         if len(self.cubes) == 1:
             return
+
+        #print("actually removing!")
 
         index = self.random.randint(1, len(self.cubes) - 1)
 
@@ -258,6 +270,9 @@ class SOLUTION:
 
         #print("SELF.CUBES AFTER REMOVAL:", self.cubes)
         #print("MUTATE_OPS AFTER CUBE REMOVAL:", self.mutate_ops, "\n")
+
+        print("\n---removed cube (actually!)")
+        self.actualBodyMutations += 1
 
     def mutate_body_logic(self, mutationNum):
 
@@ -359,9 +374,15 @@ class SOLUTION:
     def Mutate(self):
         self.mutate_ops = []
         mutationNum = 0
-        if self.random.random() < self.body_mutation_rate: # TODO make if
+        
+        #rand0 = self.random.random()
+        rand = self.random.random()
+        # TODO compare random.random() vs self.random.random()?
+        print("\nRAND:", rand, "BODY MUTATION RATE:", self.body_mutation_rate)
+        if rand < self.body_mutation_rate: # TODO make if
             self.mutate_body_logic(mutationNum)
             mutationNum += 1
+        
         self.write_urdf()
         self.update_brain_logic()
         self.mutate_brain()

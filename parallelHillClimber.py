@@ -42,7 +42,7 @@ class PARALLEL_HILL_CLIMBER:
             + ".txt", "wb") as f:
             pickle.dump(self.parents, f)
 
-        self.Evaluate(self.parents, direct=True, firstGen=True)
+        self.Evaluate("create", self.parents, direct=True, firstGen=True)
         self.initBestFitness(firstDirect)
         
         for currentGeneration in range(c.numberOfGenerations):
@@ -69,21 +69,26 @@ class PARALLEL_HILL_CLIMBER:
         plt.savefig("lineageGraph_" + str(self.randSeed) + ".png")
         plt.show() # clears the figure
 
-        return self.bestFitness
+        totalMuts = 0
+        for parent in self.parents.values():
+            totalMuts += parent.actualBodyMutations
+        avgMuts = totalMuts / len(self.parents)
+
+        return [self.bestFitness, avgMuts]
 
     def Evolve_For_One_Generation(self, generation, direct=True):
         self.Spawn()
-        self.Evaluate(self.children, direct=direct)
-        self.Select(generation)
+        self.Evaluate("mutate", self.children, direct=direct)
         self.Print()
+        self.Select(generation)
 
-    def Evaluate(self, solutions, firstGen=False, direct=True):
+    def Evaluate(self, command, solutions, firstGen=False, direct=True):
         print("\nRUN", self.runNum + ", GEN:", self.evaluations)
         #print("direct:", direct, "\n")
         self.evaluations += 1
         
         for i in range(c.populationSize):
-            solutions[i].Start_Simulation(direct=direct, firstGen=firstGen) # handles mutation
+            solutions[i].Start_Simulation(command, direct=direct) # handles mutation
         for i in range(c.populationSize):
             solutions[i].Wait_For_Simulation_To_End()
 
@@ -102,7 +107,7 @@ class PARALLEL_HILL_CLIMBER:
         print("SELF.PARENTS run seeds:", list(map(lambda x: x.randSeed, self.parents.values())))
 
         for parent in self.parents.values():
-            parent.Evaluate(direct=False)
+            parent.Evaluate("view", direct=False)
 
         #self.worstFitnessExample.Evaluate(False)
         #self.parents[bestKey].Evaluate(False)
@@ -121,6 +126,7 @@ class PARALLEL_HILL_CLIMBER:
             self.children[key] = copy.deepcopy(self.parents[key])
             self.children[key].Set_ID(self.nextAvailableID)
             self.nextAvailableID += 1
+            self.children[key].seed_random(self.myRandom.randrange(sys.maxsize))
 
     def initBestFitness(self, firstDirect):
         self.lineFitness = []
@@ -152,6 +158,7 @@ class PARALLEL_HILL_CLIMBER:
                 childFitness))
             if childFitness < parentFitness:
                 self.parents[key] = child
+                print("\nREPLACING FITNESS", parentFitness, "WITH", childFitness)
             if bestFitness is None or parentFitness < bestFitness:
                 bestFitness = parentFitness
                 bestFitnessExample = parent

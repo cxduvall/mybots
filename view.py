@@ -26,7 +26,7 @@ print("\nparents:", parents)
 
 print("\nFIRST GEN")
 for parent in parents.values():
-    parent.Evaluate(direct=False, viewLen=viewLen)
+    parent.Evaluate("view", direct=False, viewLen=viewLen)
 
 print("\nLAST GEN")
 time.sleep(1)
@@ -43,4 +43,4 @@ file = open(filename, 'rb')
 parents = pickle.load(file)
 
 for parent in parents.values():
-    parent.Evaluate(direct=False, viewLen=viewLen)
+    parent.Evaluate("view", direct=False, viewLen=viewLen)

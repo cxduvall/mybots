@@ -44,6 +44,10 @@ class PARALLEL_HILL_CLIMBER:
 
         self.Evaluate("create", self.parents, direct=True, firstGen=True)
         self.initBestFitness(firstDirect)
+
+        # TODO shows first gen -- can rm for non-video purposes
+        for parent in self.parents.values():
+            parent.Evaluate("view", direct=False)
         
         for currentGeneration in range(c.numberOfGenerations):
             self.Evolve_For_One_Generation(currentGeneration + 1)

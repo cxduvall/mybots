@@ -6,6 +6,7 @@ import time
 
 # TODO take cli for run seed, then unpickle and eval PHC from the file
 
+# runSeed viewLen
 runSeed = str(int(sys.argv[1]))
 viewLen = int(sys.argv[2])
 

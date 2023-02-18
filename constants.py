@@ -9,7 +9,7 @@ phaseOffset = 0
 
 maxForce = 500
 
-numberOfGenerations = 10
+numberOfGenerations = 100
 populationSize = 10
 numSecs = 10
 viewSecs = 10 # TODO not implemented

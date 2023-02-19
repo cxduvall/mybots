@@ -1,4 +1,4 @@
-See Diagram.PDF for diagrams.
+See Diagram.PDF for diagrams, FitnessGraph_example.png for fitness of best creatures each generation for 5 runs.
 
 Assignment 8 for the Northwestern course CS 396 -- Artificial Life. This repository contains a Python program that can simulate the evolution of virtual robots (with evolving brains and bodies). Robot fitness is calculated as the euclidian distance of a robot from the origin in the xy-plane after 10 seconds of simulation.
 

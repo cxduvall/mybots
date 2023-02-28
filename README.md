@@ -5,6 +5,8 @@ Assignment 8 for the Northwestern course CS 396 -- Artificial Life. This reposit
 
 Running "python3 main.py" will pass through several simulated "runs", each with a different random seed. As-is, 5 runs will occur, each with 100 generations of 10 simulated creatures (these numbers can be modified in constants.py). At the end of each run, a graph will be displayed showing the fitness of each "lineage" (member of the population at each generation). At the end of the last run, the simulations of creatures from the last run's final generation will be displayed. At the end of the program, the random seeds for each run of the program will be printed. Saved graphs include "lineageGraph_X.png", where X is the seed of a run and the graph is the fitness by lineage for that run, and "fitnessGraph_Y".png, which compares the fitness of the fittest robot at each generation across all runs of the simulation, with Y being the random seed of Run 0. Running "python3 main.py X", where X is a random seed, will perform a single run with that seed (caution: it may overwrite the fitnessGraph_Y.png if the seed was seed 0 of a previous simulation). Note: view.py (meant to be used to view simulations of creatures without having to re-run main.py) is not currently functional (but main.py works).
 
+The methods for generating/evolving robot bodies and brains are shown below:
+
 ![Diagram1](https://user-images.githubusercontent.com/57238295/221744720-f49f8a53-ab19-481a-b607-be2081615569.jpg)
 
 ![Diagram2](https://user-images.githubusercontent.com/57238295/221744777-169ac7fd-ec03-434c-86c9-dd281455203f.jpg)

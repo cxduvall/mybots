@@ -8,7 +8,7 @@ import time
 import math
 
 class SIMULATION:
-    def __init__(self, directOrGUI, id, numSecs):
+    def __init__(self, directOrGUI, id, numSecs, pid):
         if directOrGUI == "DIRECT":
             self.physicsClient = p.connect(p.DIRECT)
         else:
@@ -22,7 +22,7 @@ class SIMULATION:
         #print("success!")
         self.numFrames = math.floor(numSecs * c.fps)
         self.world = WORLD(id, c.fps)
-        self.robot = ROBOT(self.numFrames, id)
+        self.robot = ROBOT(self.numFrames, id, pid, memorySpan = c.fps)
         #print("ABOUT TO MAKE PLATFORM")
         #self.platform = PLATFORM(self.numFrames, id, c.fps)
         #print("MADE PLATFORM. !!!")
@@ -39,7 +39,7 @@ class SIMULATION:
             p.stepSimulation()
 
             #self.platform.Prepare()
-            #self.world.Tilt(i)
+            self.world.Tilt(i)
 
             self.robot.Prepare()
             self.robot.Sense(i)

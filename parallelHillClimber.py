@@ -1,14 +1,14 @@
-from solution import SOLUTION
+from solution import SOLUTION, Cube, Joint, SolutionEncoder
 import constants as c
 import copy
 import os
 import random
-import pickle
+import json
 import sys
 import matplotlib.pyplot as plt
 
 class PARALLEL_HILL_CLIMBER:
-    def __init__(self, randSeed, showFirst, runNum):
+    def __init__(self, randSeed, runNum, bodyEv, pidNeurons):
         #print("here")
         os.system("rm brain*.nndf")
         #print("rm fitness now...")
@@ -23,55 +23,64 @@ class PARALLEL_HILL_CLIMBER:
         self.childSeeds = []
         for i in range(c.populationSize):
             childSeed = self.myRandom.randrange(sys.maxsize)
-            self.parents[i] = SOLUTION(self.nextAvailableID, childSeed)
+            self.parents[i] = SOLUTION(self.nextAvailableID, childSeed, bodyEv, pidNeurons)
             self.nextAvailableID += 1
             self.childSeeds.append(childSeed)
-        self.showFirst = showFirst
+        #self.showFirst = showFirst
         self.runNum = runNum
         self.populationSize = c.populationSize
+        self.pidStr = "PID" if pidNeurons else "NOPID"
 
-    def Evolve(self):
+    def Evolve(self, showFirst=False):
         self.evaluations = 0
-        firstDirect = not self.showFirst
-        # TODO direct=firstDirect
+        #firstDirect = not self.showFirst
 
-        with open("firstGen_seed" + str(self.randSeed)
+        self.Evaluate("create", self.parents, direct=(not showFirst), firstGen=True)
+        self.initBestFitness()
+
+        with open("firstGen_run" + str(self.runNum) + "_" + self.pidStr + "_seed" + str(self.randSeed)
             + "_pop" + str(c.populationSize)
             + "_gens" + str(c.numberOfGenerations)
             + "_evalSecs" + str(c.numSecs)
-            + ".txt", "wb") as f:
-            pickle.dump(self.parents, f)
-
-        self.Evaluate("create", self.parents, direct=True, firstGen=True)
-        self.initBestFitness(firstDirect)
+            + ".json", "w") as f:
+            #print(type(self.parents[0]))
+            #print(self.parents)
+            jsonStr = json.dumps(self.parents, cls=SolutionEncoder)
+            f.write(jsonStr)
 
         # TODO shows first gen -- can rm for non-video purposes
-        for parent in self.parents.values():
-            parent.Evaluate("view", direct=False)
+        #for parent in self.parents.values():
+        #    parent.Evaluate("view", direct=True)
         
         for currentGeneration in range(c.numberOfGenerations):
             self.Evolve_For_One_Generation(currentGeneration + 1)
 
-        # pickle all final-gen creatures for this run in a file named lastGen_seedX_popX_gensX_evalSecsX
-        with open("lastGen_seed" + str(self.randSeed)
+        # store all final-gen creatures for this run in a file named lastGen_seedX_popX_gensX_evalSecsX
+        with open("lastGen_run" + str(self.runNum) + "_" + self.pidStr + "_seed" + str(self.randSeed)
             + "_pop" + str(c.populationSize)
             + "_gens" + str(c.numberOfGenerations)
             + "_evalSecs" + str(c.numSecs)
-            + ".txt", "wb") as f:
-            pickle.dump(self.parents, f)
+            + ".json", "w") as f:
+            print(type(self.parents[0]))
+            jsonStr = json.dumps(self.parents, cls=SolutionEncoder)
+            f.write(jsonStr)
 
-        # TODO use lineFitness to save a fig w trends for all lines, seed as legend
         for fitness in self.lineFitness:
             plt.plot(fitness)
-        plt.title("Horizontal Distance from Origin (Larger is Better) - By Lineage")
+        plt.title("Negative Distance from Origin (Smaller AbsVal is Better) - By Lineage")
         plt.xlabel("Generation")
         plt.ylabel("Fitness")
         labels = []
         for i in range(len(self.lineFitness)):
             labels.append("Lineage " + str(i) + ": " + str(self.childSeeds[i]))
         plt.legend(labels=labels)
-        plt.savefig("lineageGraph_" + str(self.randSeed) + ".png")
-        plt.show() # clears the figure
+        plt.savefig("lineageGraph_run" + str(self.runNum) + "_" + self.pidStr + "_" + str(self.randSeed) + ".png")
+        plt.clf() # clears the figure
+
+        # save lineage graph as txt
+        with open("lineageText_run" + str(self.runNum) + "_" + self.pidStr + "_" + str(self.randSeed) + ".txt", "w") as f:
+            f.write(str(self.lineFitness))
+
 
         totalMuts = 0
         for parent in self.parents.values():
@@ -117,12 +126,15 @@ class PARALLEL_HILL_CLIMBER:
         #self.parents[bestKey].Evaluate(False)
 
     def Print(self):
+        pass
+        '''
         print('\n')
         for key in self.parents.keys():
             parent = self.parents[key]
             child = self.children[key]
             print(parent.Get_Fitness(), child.Get_Fitness())
         print('\n')
+        '''
 
     def Spawn(self):
         self.children = {}
@@ -132,7 +144,7 @@ class PARALLEL_HILL_CLIMBER:
             self.nextAvailableID += 1
             self.children[key].seed_random(self.myRandom.randrange(sys.maxsize))
 
-    def initBestFitness(self, firstDirect):
+    def initBestFitness(self):
         self.lineFitness = []
         self.bestFitness = []
         bestFitness = None
@@ -162,7 +174,7 @@ class PARALLEL_HILL_CLIMBER:
                 childFitness))
             if childFitness < parentFitness:
                 self.parents[key] = child
-                print("\nREPLACING FITNESS", parentFitness, "WITH", childFitness)
+                #print("\nREPLACING FITNESS", parentFitness, "WITH", childFitness)
             if bestFitness is None or parentFitness < bestFitness:
                 bestFitness = parentFitness
                 bestFitnessExample = parent

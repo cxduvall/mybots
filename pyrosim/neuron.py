@@ -18,6 +18,8 @@ class NEURON:
 
         self.Search_For_Joint_Name(line)
 
+        self.Search_For_Control_Attrib(line)
+
         self.Set_Value(0.0)
 
     def Add_To_Value( self, value ):
@@ -31,6 +33,10 @@ class NEURON:
     def Get_Link_Name(self):
 
         return self.linkName
+    
+    def Get_Control_Attrib(self):
+
+        return self.controlAttrib
 
     def Get_Name(self):
 
@@ -51,6 +57,13 @@ class NEURON:
     def Is_Motor_Neuron(self):
 
         return self.type == c.MOTOR_NEURON
+    
+    def Is_Controlled_Neuron(self):
+
+        return self.type == c.CONTROLLED_NEURON
+    
+    def Update_Controlled_Neuron(self, val):
+        self.Set_Value(val)
 
     def Update_Sensor_Neuron(self):
         self.Set_Value(pyrosim.Get_Touch_Sensor_Value_For_Link(self.Get_Link_Name()))
@@ -131,6 +144,14 @@ class NEURON:
             splitLine = line.split('"')
 
             self.linkName = splitLine[5]
+
+    def Search_For_Control_Attrib(self,line):
+
+        if "controlAttrib" in line:
+
+            splitLine = line.split('"')
+
+            self.controlAttrib = splitLine[5]
 
     def Threshold(self):
 

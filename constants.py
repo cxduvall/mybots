@@ -1,6 +1,6 @@
 import math
 
-gravityStrength = 10
+gravityStrength = 60
 fps = 60
 
 amplitude = math.pi/2
@@ -9,11 +9,10 @@ phaseOffset = 0
 
 maxForce = 500
 
-numberOfGenerations = 100
+numberOfGenerations = 50 #50 
 populationSize = 10
 numSecs = 10
-viewSecs = 10 # TODO not implemented
-numRuns = 5
+numRuns = 5 #5
 
 numSensorNeurons = 8
 numMotorNeurons = 8

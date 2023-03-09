@@ -1,11 +1,24 @@
-See FitnessGraph_example.png for fitness of best creatures each generation for 5 runs.
+<h1>PID vs Non-PID Evolved Robot Brains for Platform Balancing</h1>
 
+<h2>Background</h2>
 
-Assignment 8 for the Northwestern course CS 396 -- Artificial Life. This repository contains a Python program that can simulate the evolution of virtual robots (with evolving brains and bodies). Robot fitness is calculated as the euclidian distance of a robot from the origin in the xy-plane after 10 seconds of simulation.
+PID ("Proportional, Integral, Derivative") control is a common method in engineering for maintaining a desired state in a system (e.g. the temperature of a room regulated by a thermostat, or the rate of output of one portion of an assembly line). The basic idea is that the current state ("Proportional"), the previous state added up over a certain time frame ("Integral"), and the rate of change of the current state ("Derivative") all play a role in deciding how the system should be controlled to achieve/maintain the goal state. For example, a thermostat that detects a room rising above a certain temperature (high proportional value) might engage cooling systems at a certain strength -- if it detects high temperatures for longer (integral), it may work harder, while if temperature is already dropping rapidly (derivative), it may cool with less intensity in order to save energy and not over-correct. This kind of control is useful in systems that are susceptible to outside forces, chaotic or unpredictable.
 
-Running "python3 main.py" will pass through several simulated "runs", each with a different random seed. As-is, 5 runs will occur, each with 100 generations of 10 simulated creatures (these numbers can be modified in constants.py). At the end of each run, a graph will be displayed showing the fitness of each "lineage" (member of the population at each generation). At the end of the last run, the simulations of creatures from the last run's final generation will be displayed. At the end of the program, the random seeds for each run of the program will be printed. Saved graphs include "lineageGraph_X.png", where X is the seed of a run and the graph is the fitness by lineage for that run, and "fitnessGraph_Y".png, which compares the fitness of the fittest robot at each generation across all runs of the simulation, with Y being the random seed of Run 0. Running "python3 main.py X", where X is a random seed, will perform a single run with that seed (caution: it may overwrite the fitnessGraph_Y.png if the seed was seed 0 of a previous simulation). Note: view.py (meant to be used to view simulations of creatures without having to re-run main.py) is not currently functional (but main.py works).
+In this experiment, I try applying this means of control as part of evolved simulated robot creatures trying to balance on a platform that tilts back and forth sinusoidally.
+
+<h2>Repo Code Usage</h2>
+
+Running simulations: Running "python3 main.py BODYEV PID" will pass through several simulated "runs", each with a different random seed. This will not show any GUI to the program user (for that, see next paragraph). As-is, 5 runs will occur, each with 50 generations of 10 simulated creatures, simulated for 10 virtual seconds (these numbers can be modified in constants.py). Saved graphs include "lineageGraph" png files, where the number at the end of the filename is the seed of a run and the graph is the fitness by lineage for that run, and "fitnessGraph" png files, which compare the fitness of the fittest robot at each generation across all runs of the simulation, with the number at the end of the filename being the random seed of Run 0. Running "python3 main.py X1 X2 ... Xn", where each Xi is a random seed, will perform a run with that sequence of seeds (caution: it may overwrite previous saved fitnessGraph files if the first seed was seed 0 of a previous simulation). Running main.py will produce JSON files that save information about the first and last-evolved generation of every run.
+
+Viewing simulations: Running "python3 view.py popToShow viewLen pid filename", where popToShow is replaced by a number of creatures to show (no more than the population size of file filename), viewLen is replaced by a number of seconds to view the simulation (which can be larger than the original simulation length), pid is either "True" or "False" and must correspond to whether filename stores results from a PID or non-PID simulation, and filename is the name of a "firstGen" or "lastGen" JSON file, will show creatures from the first or last generation of a previously-simulated run.
+
+<h2>Simulator Explanation (Control Scenario)</h2>
+
+<b>Control Scenario Body Generation/Evolution/Morphospace</b>
 
 The methods for generating/evolving robot bodies and brains are shown below:
+
+(Ignore the upper half of this first image, it is outdated)
 
 ![Diagram1](https://user-images.githubusercontent.com/57238295/221744720-f49f8a53-ab19-481a-b607-be2081615569.jpg)
 
@@ -15,16 +28,44 @@ Initial robots are generated with a random number of rectangular prisms to their
 
 The robot bodies are evolved in the following way: Each generation, there is a 30% chance of the the program attempting to mutate the body. If an attempt at mutation is made, there is a 10% chance of adding a prism, in which case a new prism is added in the same way prisms are added when the body is initialized (choose a random existing prism, face, offsets on that face, dimensions of the new prism and joint direction, repeating the process until a solution is found that satisfies the non-overlap and height limit constraints). Otherwise (with a 90% chance), the program attempts to remove a cube, deleting a random cube, its parent joint and all of its "descendant" cubes and joints -- it will simply abort this procedure if less than 2 cubes remain after deletion.
 
-The neural network "brain" of the creature is initially generated by creating a "sensor neuron" for each sensor prism and a "motor neuron" for each joint -- the layer of sensor neurons is fully connected to the layer of motor neurons, and weights are initialized randomly as a floating point number between -1 and 1.
+All in all, the body morphospace of this program includes a wide variety of creatures composed of rectangular prisms (including those which overlap with themselves), with parts initially flush against one another, joints being at the center of at least one of the two parts they connect, joints in 1 of 3 cardinal directions and all joints being simple revolute joints. It does not include creatures with other shapes of body parts, parts not flush against each other on initialization, joints with neither of their parts centered on the joint, joints in a direction other than the cardinal 3 or ball-and-socket or sliding joints.
 
-The brain is evolved by randomizing a single synapse weight in the brain (after body mutation has occurred, if it occurrs).
+<b>Control Scenario Brain Generation/Evolution/Morphospace</b>
 
-All in all, the morphospace of this program includes a wide variety of creatures composed of rectangular prisms (including those which overlap with themselves), with parts initially flush against one another, joints being at the center of at least one of the two parts they connect, joints in 1 of 3 cardinal directions and all joints being simple revolute joints. It does not include creatures with other shapes of body parts, parts not flush against each other on initialization, joints with neither of their parts centered on the joint, joints in a direction other than the cardinal 3 or ball-and-socket or sliding joints. Only fully-connected brains with no hidden layers are possible (sensors are directly connected to motors, with every sensor connected to every motor with some random weight, though some of these weights could be close to zero). Because the brain is fully connected, a sensor on one body can affect a motor on the other side (or anywhere on the body).
+The neural network "brain" of the creature is initially generated by creating a "sensor neuron" for each sensor prism and a "motor neuron" for each joint -- the layer of sensor neurons is fully connected to a hidden layer of neurons (equal in size to the sensor neuron layer), which is then fully connected to the layer of motor neurons, and weights are initialized randomly as a floating point number between -1 and 1.
 
-Every generation (whether the body is mutated or not), for each member of the robot population, the fitness of the mutated robot is compared to its parent, and the fitter creature continues evolving.
+The brain is evolved by randomizing a single synapse weight in the brain in one of the 2 layers (after body mutation has occurred, if it occurrs).
 
-Resources Used
+Regarding the brain morphospace, only brains with 1 hidden layers and 2 fully-connected groups of synapses "sandwiching" it are possible. Because of these fully-connected synapses, a sensor on one body can affect a motor on the other side (or anywhere on the body).
+
+<b>Evolutionary Selection</b>
+
+Every generation (whether the body is mutated or not), for each member of the robot population, the fitness of the mutated robot is compared to its parent, and the fitter creature continues evolving. This makes the method of selection a "Parallel Hill Climbers" -- fellow members of the population do not directly interact, and the program tries making one change (or one brain and one body change) to robots at a time to check for improvement.
+
+<h2>Experiment</h2>
+
+<b>Hypothesis</b>
+
+Adding 9 "PID neurons" (in addition to body sensor neurons), with a proportional, integral and derivative neuron for each of the 3 spatial axes, to the input layer of the robot's neural network "brain" will lead to improved performance at balancing on the platform, as measured by the euclidean distance of the robot from its starting point after 10 simulated seconds.
+
+<b>Methods</b>
+
+>> brain sketch
+
+For the experimental scenario, the Pyrosim simulated robot library was modified to allow the creation of "controlled neurons" whose values are set manually by each instance of the ROBOT class, and the ROBOT class was modified to create the 9 PID neurons. For each spatial dimension, a proportional neuron was added whose value was set to the robot's current position in that dimension at each frame, an integral neuron was added whose value was set to the average of past positions in that dimension over the past 60 frames, and a derivative neuron was added whose value was set to the robot's change in position in that dimension since last frame. The hidden layer of the brain was also enlarged to correspond to the new size of the input layers.
+
+For both the control and experimental scenario, 5 evolutionary runs with a population size of 10 and simulations of 10 simulated seconds were performed. Because of the experimenter's major time constraints, only 50 generations were calculated for each run.
+
+<b>Results</b>
+
+>> 2 Fitness graphs
+
+//
+
+<b>Resources Used</b>
 
 Pyrosim: github.com/jbongard/pyrosim
 
 r/ludobots: reddit.com/r/ludobots/wiki/installation/
+
+CS 396 -- Artificial Life, taught by Sam Kriegman, at Northwestern University

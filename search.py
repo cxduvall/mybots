@@ -15,31 +15,36 @@ avgMuts = []
 
 # rn, shows first creatures, and last creatures, on the last run.
 
-if len(argv) > 1: # if give a seed, just do 1 run w it
-    for i in range(len(argv) - 1):
-        print("\n--- DOING SIM NUMBER:", i, "---\n")
-        randSeed = int(sys.argv[i + 1])
+# command must have BODYEV or NOBODYEV, PID or NOPID, then optionally (a) seed(s)
+bodyEv = (argv[1] == "BODYEV")
+pidStr = argv[2]
+pidNeurons = (pidStr == "PID")
+
+# if give (a) seed(s), just do 1 run w each
+if len(argv) > 3:
+    for i in range(len(argv) - 3):
+        print("\n--- DOING RUN NUMBER:", i, "---\n")
+        randSeed = int(sys.argv[i + 2])
         print("Whole-run randSeed:", randSeed)
         seeds.append(randSeed)
-        phc = PARALLEL_HILL_CLIMBER(randSeed, True, str(i))
-        result = phc.Evolve()
+        phc = PARALLEL_HILL_CLIMBER(randSeed, str(i), bodyEv, pidNeurons)
+        result = phc.Evolve(False)
         runFitness.append(result[0])
         avgMuts.append(result[1])
-
-else:
+else: # no seeds specified
     for i in range(numRuns):
         print("\n--- DOING SIM NUMBER:", i, "---\n")
         randSeed = random.randrange(sys.maxsize)
         print("Whole-run randSeed:", randSeed)
         seeds.append(randSeed)
-        showFirst = (i == numRuns - 1)
-        phc = PARALLEL_HILL_CLIMBER(randSeed, showFirst, str(i))
-        result = phc.Evolve()
+        #showFirst = (i == numRuns - 1)
+        phc = PARALLEL_HILL_CLIMBER(randSeed, str(i), bodyEv, pidNeurons)
+        result = phc.Evolve(False)
         runFitness.append(result[0])
         avgMuts.append(result[1])
 
 print("\n\n\n\n\n--- SHOWING BEST!! ---")
-phc.Show_Best()
+#phc.Show_Best()
 
 fitArr = np.asarray(runFitness)
 print("fitArr.shape:", fitArr.shape)
@@ -55,7 +60,7 @@ for i in range(len(runFitness)):
     #        maxForGen = runFitness[runIndex][genIndex]
     plt.plot(runFitness[i])
 
-plt.title("Horizontal Distance from Origin (Larger is Better)")
+plt.title("Negative Distance from Origin (Smaller AbsVal is Better)")
 plt.xlabel("Generation")
 plt.ylabel("Fitness")
 labels = []
@@ -63,7 +68,10 @@ for i in range(len(runFitness)):
     labels.append("Run " + str(i) + ": " + str(seeds[i]))
 plt.legend(labels=labels)
 
-plt.savefig("fitnessGraph_" + str(seeds[0]) + ".png")
+plt.savefig("fitnessGraph_" + pidStr + "_" + str(seeds[0]) + ".png")
 print("ALL SEEDS FOR THIS SET OF RUNS:", seeds)
+
+with(open("fitnessText_" + pidStr + "_" + str(seeds[0]) + ".txt", "w")) as f:
+    f.write(str(runFitness))
 
 #plt.show() # clears the figure # TODO seg fault -- why?

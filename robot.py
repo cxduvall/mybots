@@ -8,7 +8,7 @@ import constants as c
 import math
 
 class ROBOT:
-    def __init__(self, numFrames, id):
+    def __init__(self, numFrames, id, pidNeurons, memorySpan=60):
         print("in robot!")
         self.robotId = p.loadURDF("body" + str(id) + ".urdf")
         pyrosim.Prepare_To_Simulate(self.robotId)
@@ -18,7 +18,12 @@ class ROBOT:
         os.system("rm brain" + str(id) + ".nndf")
         os.system("rm body" + str(id) + ".urdf")
         self.myID = id
-        #print("done w robot!")
+
+        self.fitnessMemorySpan = memorySpan
+        self.pidNeurons = pidNeurons
+        if self.pidNeurons:
+            self.fitnessMemory = {"X": [], "Y": [], "Z": []}
+            self.fitnessMemorySum = {"X": 0, "Y": 0, "Z": 0}
 
     def Prepare_To_Sense(self, numFrames):
         self.sensors = {}
@@ -50,8 +55,31 @@ class ROBOT:
                 self.motors[jointName].Set_Value(desiredAngle, self.robotId)
 
     def Think(self, t):
-        self.nn.Update()
-        #self.nn.Print()
+
+        xPos, yPos, zPos = self.Get_Position()
+
+        pidDict = {}
+        posDims = {"X": xPos, "Y": yPos, "Z": zPos}
+
+        if self.pidNeurons:
+            for dim in ("X", "Y", "Z"):
+                dimDict = {}
+                pos = posDims[dim]
+                dimDict["proportional"] = pos
+                if len(self.fitnessMemory[dim]) > 0:
+                    dimDict["derivative"] = pos - self.fitnessMemory[dim][-1]
+                else:
+                    dimDict["derivative"] = pos
+                self.fitnessMemory[dim].append(pos)
+                self.fitnessMemorySum[dim] += pos
+                if len(self.fitnessMemory[dim]) >= self.fitnessMemorySpan:
+                    self.fitnessMemorySum[dim] -= self.fitnessMemory[dim][0]
+                    self.fitnessMemory[dim].pop(0)
+                dimDict["integral"] = self.fitnessMemorySum[dim] / self.fitnessMemorySpan
+                for key in dimDict.keys():
+                    pidDict[key + dim] = dimDict[key] # proportionalX, integralX, etc
+
+        self.nn.Update(pidDict)
 
     def Save_Sensor_Values(self):
         for sensor in self.sensors.values:
@@ -61,15 +89,23 @@ class ROBOT:
         for motor in self.motors.values:
             motor.Save_Values()
 
-    def Get_Fitness(self):
+    def Get_Position(self):
         basePositionAndOrientation = p.getBasePositionAndOrientation(self.robotId)
         basePosition = basePositionAndOrientation[0]
         xPos = basePosition[0]
         yPos = basePosition[1]
         zPos = basePosition[2]
-        distance = math.sqrt((xPos**2) + (yPos**2))
-        fitness = distance * -1
-        print("\nROBOT FITNESS with id" + self.myID + ":", fitness)
+        return xPos, yPos, zPos
+
+    def Calc_Fitness(self):
+        xPos, yPos, zPos = self.Get_Position()
+        distance = math.sqrt((xPos**2) + (yPos**2) + (zPos**2))
+        fitness = distance # loss -- bigger is worse
+        return fitness
+
+    def Get_Fitness(self):
+        fitness = self.Calc_Fitness()
+        #print("\nROBOT FITNESS with id" + self.myID + ":", fitness)
         with open("tmp" + str(self.myID) + ".txt", "w") as f:
             f.write(str(fitness))
         os.system("mv tmp" + str(self.myID) + ".txt fitness" + str(self.myID) + ".txt")

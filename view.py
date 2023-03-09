@@ -1,47 +1,61 @@
-from solution import SOLUTION
-import pickle
+from solution import SOLUTION, Cube, Joint, Write_urdf, Write_nndf
+import json
 import sys
 import os
 import time
-
-# TODO take cli for run seed, then unpickle and eval PHC from the file
+import numpy as np
+import pyrosim.pyrosim as pyrosim
 
 # runSeed viewLen
-runSeed = str(int(sys.argv[1]))
+popToShow = int(sys.argv[1])
 viewLen = int(sys.argv[2])
+pid = bool(sys.argv[3])
+filename = sys.argv[4]
 
 here = path = os.getcwd()
 filesHere = os.listdir(here)
 
-filename = None
-for i in range(len(filesHere)):
-    if filesHere[i].startswith("firstGen_seed" + runSeed):
-        filename = filesHere[i]
-        break
-if filename is None:
-    print("NO FIRST FILE FOUND")
-    exit()
-file = open(filename, 'rb')
-parents = pickle.load(file)
-print("\nparents:", parents)
+file = open(filename, 'r')
+parentStr = file.readlines()[0].rstrip("\n")
+#print(parentStr)
+parents = json.loads(parentStr)
+#print("\nparents:", parents)
 
-print("\nFIRST GEN")
-for parent in parents.values():
-    parent.Evaluate("view", direct=False, viewLen=viewLen)
+values = list(parents.values())
+for i in range(popToShow):
+    id = 0
+    parent = values[i]
 
-print("\nLAST GEN")
-time.sleep(1)
+    # package more complicated attributes
 
-filename = None
-for i in range(len(filesHere)):
-    if filesHere[i].startswith("lastGen_seed" + runSeed):
-        filename = filesHere[i]
-        break
-if filename is None:
-    print("NO LAST FILE FOUND")
-    exit()
-file = open(filename, 'rb')
-parents = pickle.load(file)
+    #print("\n", parent)
 
-for parent in parents.values():
-    parent.Evaluate("view", direct=False, viewLen=viewLen)
+    cubes = parent["cubes"]
+    for i in range(len(cubes)):
+        cubeDict = cubes[i]
+        cubes[i] = Cube(**cubeDict)
+
+    joints = parent["joints"]
+    for i in range(len(joints)):
+        jointDict = joints[i]
+        joints[i] = Joint(**jointDict)
+
+    inputWeights = np.array(parent["inputWeights"])
+    outputWeights = np.array(parent["outputWeights"])
+
+    # Now write the files
+
+    Write_urdf(id, cubes, parent["sensors"], joints)
+
+    Write_nndf(id, parent["pidNeurons"], parent["sensors"],
+        parent["numSensors"], parent["numPidNeurons"],
+        cubes, joints, parent["jointParentLinks"],
+        parent["jointChildLinks"],
+        inputWeights, outputWeights)
+
+    pyrosim.Start_SDF("world" + str(id) + ".sdf")
+    pyrosim.End()
+
+    command = "python3 simulate.py " + str(viewLen) + " GUI " \
+            + str(id) + " " + str(pid) + " 2" # 2&>1 &
+    os.system(command)

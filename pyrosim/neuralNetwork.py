@@ -20,6 +20,8 @@ class NEURAL_NETWORK:
 
     def Print(self):
 
+        self.Print_Controlled_Neuron_Values()
+
         self.Print_Sensor_Neuron_Values()
 
         self.Print_Hidden_Neuron_Values()
@@ -28,10 +30,14 @@ class NEURAL_NETWORK:
 
         print("")
 
-    def Update(self):
+    def Update(self, pidDict):
         for key in self.neurons.keys():
             if self.neurons[key].Is_Sensor_Neuron():
                 self.neurons[key].Update_Sensor_Neuron()
+            elif self.neurons[key].Is_Controlled_Neuron():
+                neuron = self.neurons[key]
+                controlAttrib = neuron.Get_Control_Attrib()
+                self.neurons[key].Update_Controlled_Neuron(pidDict[controlAttrib])
             else:
                 self.neurons[key].Update_Hidden_Or_Motor_Neuron(self.neurons, self.synapses)
     
@@ -40,6 +46,9 @@ class NEURAL_NETWORK:
 
     def Is_Motor_Neuron(self, name):
         return self.neurons[name].Is_Motor_Neuron()
+    
+    def Is_Controlled_Neuron(self, name):
+        return self.neurons[name].Is_Controlled_Neuron()
 
     def Get_Motor_Neurons_Joint(self, neuronName):
         return self.neurons[neuronName].Get_Joint_Name()
@@ -115,6 +124,18 @@ class NEURAL_NETWORK:
         for neuronName in sorted(self.neurons):
 
             if self.neurons[neuronName].Is_Motor_Neuron():
+
+                self.neurons[neuronName].Print()
+
+        print("")
+
+    def Print_Controlled_Neuron_Values(self):
+
+        print("controlled neuron values: " , end = "" )
+
+        for neuronName in sorted(self.neurons):
+
+            if self.neurons[neuronName].Is_Controlled_Neuron():
 
                 self.neurons[neuronName].Print()
 

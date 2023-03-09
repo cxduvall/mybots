@@ -8,6 +8,8 @@ import random
 import math
 import sys
 import csv
+import json
+import copy
 
 class Cube:
     def __init__(self, parentJIndex=-1, jointPos=[0,0,0],
@@ -37,24 +39,112 @@ class Joint:
         #implement if needed - indices?
         pass
 
+def GetChildCubeIndex(cubes, k):
+        # which index cube has joint k as parent?
+        for q in range(len(cubes)):
+            cube = cubes[q]
+            if cube.parentJIndex == k:
+                return q
+        return -1
+
+def Write_urdf(myID, cubes, sensors, joints):
+    pyrosim.Start_URDF("body" + str(myID) + ".urdf")
+
+    for j in range(len(cubes)):
+        name = "Link"+str(j)
+        pos = cubes[j].jointPos
+
+        if sensors[j]:
+            pyrosim.Send_Cube(name=name, pos=pos, size=cubes[j].lwh,
+                matName="Green", matRGBA=[0.0,1.0,0.0,1.0])
+        else:
+            pyrosim.Send_Cube(name=name, pos=pos, size=cubes[j].lwh,
+                matName="Blue", matRGBA=[0.0,0.5,1.0,1.0])
+
+    for k in range(len(joints)):
+        parentInd = joints[k].parentCubeIndex
+        childInd = GetChildCubeIndex(cubes, k)
+        parentName = "Link" + str(parentInd)
+        childName = "Link" + str(childInd)
+        name = parentName + "_" + childName
+        pos = joints[k].jointPos
+
+        pyrosim.Send_Joint(name,parentName,childName,"revolute",pos,jointAxis=joints[k].axis)
+    
+    pyrosim.End()
+
+def Write_nndf(myID, pidNeurons, sensors, numSensors, numPidNeurons,
+    cubes, joints, jointParentLinks, jointChildLinks,
+    inputWeights, outputWeights):
+    pyrosim.Start_NeuralNetwork("brain" + str(myID) + ".nndf")
+
+    j = 0
+
+    # LAYER 1
+
+    # pidNeurons are sent first...first 3 rows.
+    if pidNeurons:
+        for dim in ["X", "Y", "Z"]:
+            pyrosim.Send_Controlled_Neuron(name = j, controlAttrib = "proportional"+str(dim))
+            j += 1
+            pyrosim.Send_Controlled_Neuron(name = j, controlAttrib = "integral"+str(dim))
+            j += 1
+            pyrosim.Send_Controlled_Neuron(name = j, controlAttrib = "derivative"+str(dim))
+            j += 1
+
+    for i in range(len(cubes)):
+        if sensors[i] == 1:
+            # THIS ONLY ADDS SENSOR CUBES (as it should)
+            pyrosim.Send_Sensor_Neuron(name = j, linkName = "Link"+str(i))
+            j += 1
+
+    for i in range(numSensors):
+        pyrosim.Send_Hidden_Neuron(name = j)
+        j += 1
+
+    for currentRow in range(numSensors + numPidNeurons):
+        for currentColumn in range(numSensors):
+            pyrosim.Send_Synapse(sourceNeuronName = currentRow,
+                                    targetNeuronName = currentColumn+numSensors+numPidNeurons,
+                                    weight = inputWeights[currentRow][currentColumn])
+
+    # LAYER 2
+
+    for i in range(len(joints)):
+        pyrosim.Send_Motor_Neuron(name = j,
+            jointName="Link"+str(jointParentLinks[i])+"_Link"+str(jointChildLinks[i]))
+        j += 1
+
+    prevNeurons = numPidNeurons + numSensors
+    for currentRow in range(numSensors):
+        for currentColumn in range(len(joints)):
+            pyrosim.Send_Synapse(sourceNeuronName = currentRow+prevNeurons,
+                                    targetNeuronName = currentColumn+numSensors+prevNeurons, 
+                                    weight = outputWeights[currentRow][currentColumn])
+
+    pyrosim.End()
+
 class SOLUTION:
-    def __init__(self, id, randseed):
+    def __init__(self, id, randseed, bodyEv, pidNeurons):
         self.myID = id
         self.minLinks = 3
         self.maxLinks = 5
-        self.body_mutation_rate = 1.0
+        self.body_mutation_rate = 0.3
         self.sensorProbability = 0.8
         self.addCubeProbability = 0.1
         self.removeCubeProbability = 0.9 # must be between 0 and 1 - addCubeProbability
         self.seed_random(randseed)
         self.maxHeight = 3
-        self.minL = 0.5
-        self.minW = 0.5
-        self.minH = 0.5
-        self.maxL = 4
-        self.maxW = 4
-        self.maxH = 4
+        self.minL = 0.3
+        self.minW = 0.3
+        self.minH = 0.3
+        self.maxL = 2
+        self.maxW = 2
+        self.maxH = 2
         self.actualBodyMutations = 0
+        self.pidNeurons = pidNeurons
+        self.numPidNeurons = 9 if self.pidNeurons else 0
+        self.bodyEv = bodyEv
 
     def Start_Simulation(self, command, direct=True, numSecs=c.numSecs):
         # command can be "create", "mutate", or "view"
@@ -64,19 +154,18 @@ class SOLUTION:
             self.Create_Body()
             self.Create_Brain()
         elif command == "mutate":
-            self.Mutate() # TODO change back?
-            #self.Create_Body()
-            #self.Create_Brain()
+            self.Mutate()
         else: # command == "view"
             self.write_urdf()
             self.write_nndf()
 
         #print("about to syscall simulate.py")
         if direct:
-            command = "python3 simulate.py " + str(numSecs) + " DIRECT " + str(self.myID) + " 2&" # 2&>1 &
+            directOrGUI = " DIRECT "
         else:
-            command = "python3 simulate.py " + str(numSecs) + " GUI " + str(self.myID) + " 2&" # 2&>1 &
-        #print("Command:", command)
+            directOrGUI = " GUI "
+        command = "python3 simulate.py " + str(numSecs) + directOrGUI \
+            + str(self.myID) + " " + str(self.pidNeurons) + " 2&>sim" # 2&>1 &
         os.system(command)
 
     def Wait_For_Simulation_To_End(self, direct=True):
@@ -114,16 +203,21 @@ class SOLUTION:
         pass
 
     def mutate_brain(self):
-        # tweak a neuron
-        randomRow = self.random.randint(0, self.numSensors - 1)
-        randomColumn = self.random.randint(0, self.numJoints - 1)
-        #print("\nself.cubes:", self.cubes)
-        #print("\nself.joints:", self.joints)
-        #print("\nself.sensors:", self.sensors)
-        #print("\nself.numSensors:", self.numSensors)
-        #print("\nself.numJoints:", self.numJoints)
-        #print("\nself.weights.shape:", self.weights.shape)
-        self.weights[randomRow,randomColumn] = self.random.random() * 2 - 1 # TODO out of bounds
+        # tweak a single neuron
+        num_input_synapses = (self.numSensors + self.numPidNeurons) * self.numSensors
+        num_output_synapses = self.numSensors * self.numJoints
+        layer_to_tweak = self.random.choices(["input", "output]"], weights=[num_input_synapses,
+                                                                            num_output_synapses])
+
+        if layer_to_tweak == "input":
+            randomRow = self.random.randint(0, self.numSensors + self.numPidNeurons - 1)
+            randomColumn = self.random.randint(0, self.numSensors - 1)
+            self.inputWeights[randomRow,randomColumn] = self.random.random() * 2 - 1
+
+        else:
+            randomRow = self.random.randint(0, self.numSensors - 1)
+            randomColumn = self.random.randint(0, self.numJoints - 1)
+            self.outputWeights[randomRow,randomColumn] = self.random.random() * 2 - 1
 
     def add_cube_mutation(self):
         #print("\nadding a cube...")
@@ -154,7 +248,7 @@ class SOLUTION:
             self.mutate_ops.append("add_sensor_link")
         # TODO if append a sensor link (or not), do the added link/joint numbers correspond??
 
-        print("\n---actually added cube!")
+        #print("\n---actually added cube!")
         self.actualBodyMutations += 1
 
     def rm_indices(self, arr, toDel):
@@ -200,7 +294,6 @@ class SOLUTION:
         # identify a list of all deleted cube indices
         sensorsToDel = [0] * self.numSensors
         #print("\nsensorsToDel length on creation (shud b numSensors):", len(sensorsToDel))
-        #print("self.weights.shape on sensorsToDel creation:", self.weights.shape)
         cToDel = [0] * len(self.cubes)
         cToDel[index] = 1
         # TODO if first cube to del here is a sensor?
@@ -271,7 +364,7 @@ class SOLUTION:
         #print("SELF.CUBES AFTER REMOVAL:", self.cubes)
         #print("MUTATE_OPS AFTER CUBE REMOVAL:", self.mutate_ops, "\n")
 
-        print("\n---removed cube (actually!)")
+        #print("\n---removed cube (actually!)")
         self.actualBodyMutations += 1
 
     def mutate_body_logic(self, mutationNum):
@@ -296,90 +389,115 @@ class SOLUTION:
 
     # cubes rows, joints cols
     def add_joint_to_weights(self):
-        #print("old weights:", self.weights)
+        # just add a column to outputWeights (for the joint's new motor neuron)
         np.random.seed(self.random.randint(0, 2**30))
-        new_col = 2 * np.random.rand(self.weights.shape[0], 1)
+        new_col = 2 * np.random.rand(self.outputWeights.shape[0], 1)
         new_col -= 1
-        self.weights = np.hstack([self.weights, new_col])
-        #print("new weights:", self.weights)
+        self.outputWeights = np.hstack([self.outputWeights, new_col])
 
-    def add_link_to_weights(self):
-        #print("old weights:", self.weights)
+    def add_sensor_to_weights(self):
+        # TODO add a row *and then* col to inputWeights, *AND* row to outputWeights
         np.random.seed(self.random.randint(0, 2**30))
-        new_row = 2 * np.random.rand(1, self.weights.shape[1])
-        new_row -= 1
-        self.weights = np.vstack([self.weights, new_row])
-        #print("new weights:", self.weights)
 
-    def rm_weight_rows(self, rowsToDel):
-        def rm_weight_row(k):
-            self.weights = np.delete(self.weights, k, 0)
+        new_row = 2 * np.random.rand(1, self.inputWeights.shape[1])
+        new_row -= 1
+        self.inputWeights = np.vstack([self.inputWeights, new_row])
+
+        new_col = 2 * np.random.rand(self.inputWeights.shape[0], 1)
+        new_col -= 1
+        self.inputWeights = np.hstack([self.inputWeights, new_col])
+
+        new_row = 2 * np.random.rand(1, self.outputWeights.shape[1])
+        new_row -= 1
+        self.outputWeights = np.vstack([self.outputWeights, new_row])
+
+    def rm_sensors_from_weights(self, sensorsToDel):
+        # rm: corresponding *adjusted* (by 9) inRow, inCol, outRow, 
+        def rm_input_weight_row(k):
+            self.inputWeights = np.delete(self.inputWeights, k, 0)
+
+        def rm_input_weight_col(k):
+            self.inputWeights = np.delete(self.inputWeights, k, 1)
+
+        def rm_output_weight_row(k):
+            self.outputWeights = np.delete(self.outputWeights, k, 0)
 
         origIndex = 0
         arrIndex = 0
-        #print("\nrm_weight_rows - self.weights.shape:", self.weights.shape)
-        #print("rm_weight_rows - rowsToDel:", rowsToDel)
-        while origIndex < self.weights.shape[0]:
-            if rowsToDel[origIndex] == 1: # TODO out of range
-                rm_weight_row(arrIndex)
+        while origIndex < self.inputWeights.shape[0]:
+            if sensorsToDel[origIndex] == 1:
+                rm_input_weight_row(arrIndex)
                 arrIndex -= 1
             arrIndex += 1
             origIndex += 1
 
-    def rm_weight_cols(self, colsToDel):
-        def rm_weight_col(k):
-            self.weights = np.delete(self.weights, k, 1)
+        origIndex = 0
+        arrIndex = 0
+        while origIndex < self.inputWeights.shape[1]:
+            if sensorsToDel[origIndex] == 1:
+                rm_input_weight_col(arrIndex)
+                arrIndex -= 1
+            arrIndex += 1
+            origIndex += 1
 
         origIndex = 0
         arrIndex = 0
-        #print("\nrm_weight_cols - self.weights.shape:", self.weights.shape)
-        #print("rm_weight_cols - colsToDel:", colsToDel)
-        while origIndex < self.weights.shape[1]:
-            if colsToDel[origIndex] == 1:
-                rm_weight_col(arrIndex)
+        while origIndex < self.outputWeights.shape[0]:
+            if sensorsToDel[origIndex] == 1:
+                rm_output_weight_row(arrIndex)
+                arrIndex -= 1
+            arrIndex += 1
+            origIndex += 1
+
+    def rm_joints_from_weights(self, jointsToDel):
+        # just remove corresponding columns from the output weights
+        def rm_output_weight_col(k):
+            self.outputWeights = np.delete(self.outputWeights, k, 1)
+
+        origIndex = 0
+        arrIndex = 0
+        while origIndex < self.outputWeights.shape[1]:
+            if jointsToDel[origIndex] == 1:
+                rm_output_weight_col(arrIndex)
                 arrIndex -= 1
             arrIndex += 1
             origIndex += 1
 
     def del_from_weights(self, mutation):
-        #print("old weights:", self.weights)
         jToDel = mutation["joints"]
         sensorsToDel = mutation["sensors"]
 
         # TODO mutation "sensors" is 2-len when weights has 3 rows?
 
-        self.rm_weight_rows(sensorsToDel)
-        self.rm_weight_cols(jToDel)
-        #print("new weights:", self.weights)
+        self.rm_sensors_from_weights(sensorsToDel)
+        self.rm_joints_from_weights(jToDel)
 
     def update_brain_logic(self):
         #print("\n\n UPDATING BRAIN LOGIC")
-        # use mutate_ops to update self.weights
+        # use mutate_ops to update weights
         for i in range(len(self.mutate_ops)):
-            #print("\nmutation", i)
             mutation = self.mutate_ops[i]
-            #print("mutate op:", mutation)
             if mutation == "add_joint":
                 self.add_joint_to_weights()
             elif mutation == "add_sensor_link":
-                self.add_link_to_weights()
+                self.add_sensor_to_weights()
             elif mutation == "none":
                 pass
                 #print("\nfound a none-mutation, continuing.")
             else:
                 self.del_from_weights(mutation)
 
-        # self.numSensors and self.numJoints have been updated at this point (as well as the size of self.weights, in ways corresponding to the potential addition(s) and/or removal(s))
+        # self.numSensors and self.numJoints have been updated at this point
+        # (as well as the size of both weight matrices, in ways corresponding to the
+        # potential addition(s) and/or removal(s))
 
     def Mutate(self):
         self.mutate_ops = []
         mutationNum = 0
         
-        #rand0 = self.random.random()
         rand = self.random.random()
-        # TODO compare random.random() vs self.random.random()?
-        print("\nRAND:", rand, "BODY MUTATION RATE:", self.body_mutation_rate)
-        if rand < self.body_mutation_rate: # TODO make if
+        #print("\nRAND:", rand, "BODY MUTATION RATE:", self.body_mutation_rate)
+        if self.bodyEv and rand < self.body_mutation_rate:
             self.mutate_body_logic(mutationNum)
             mutationNum += 1
         
@@ -438,12 +556,7 @@ class SOLUTION:
         return maxZ
 
     def getChildCubeIndex(self, k):
-        # which index cube has joint k as parent?
-        for q in range(len(self.cubes)):
-            cube = self.cubes[q]
-            if cube.parentJIndex == k:
-                return q
-        return -1
+        return GetChildCubeIndex(self.cubes, k)
 
     def create_joint(self):
         faceDim = self.random.choice(["x","y","z"])
@@ -577,7 +690,7 @@ class SOLUTION:
     def seed_random(self, randseed):
         #random.randrange(sys.maxsize)
         self.randSeed = randseed#parentRandom.randrange(sys.maxsize)#3384984311908638331 #5933355704700017414 #6910913391251108116 #4075562753625725340 #8513075665796686122 #6150022990742915642 # 6518565134699257740 - 2 together/apart if just 2 parts # 7978656969469434807 for floating + ground when 3-10 links
-        print("\nRANDOM SEED:", self.randSeed, "\n")
+        #print("\nRANDOM SEED:", self.randSeed, "\n")
         self.random = random.Random(self.randSeed)
 
     def record_joint_parents_children(self):
@@ -591,30 +704,7 @@ class SOLUTION:
         self.jointChildLinks.append(self.getChildCubeIndex(self.numJoints - 1))
 
     def write_urdf(self):
-        pyrosim.Start_URDF("body" + str(self.myID) + ".urdf")
-
-        for j in range(len(self.cubes)):
-            name = "Link"+str(j)
-            pos = self.cubes[j].jointPos
-
-            if self.sensors[j]:
-                pyrosim.Send_Cube(name=name, pos=pos, size=self.cubes[j].lwh,
-                    matName="Green", matRGBA=[0.0,1.0,0.0,1.0])
-            else:
-                pyrosim.Send_Cube(name=name, pos=pos, size=self.cubes[j].lwh,
-                    matName="Blue", matRGBA=[0.0,0.5,1.0,1.0])
-
-        for k in range(len(self.joints)):
-            parentInd = self.joints[k].parentCubeIndex
-            childInd = self.getChildCubeIndex(k)
-            parentName = "Link" + str(parentInd)
-            childName = "Link" + str(childInd)
-            name = parentName + "_" + childName # TODO bad indices
-            pos = self.joints[k].jointPos
-
-            pyrosim.Send_Joint(name,parentName,childName,"revolute",pos,jointAxis=self.joints[k].axis)
-        
-        pyrosim.End()
+        Write_urdf(self.myID, self.cubes, self.sensors, self.joints)
 
     def get_height(self):
         return self.findHighestCubeTop() - self.findLowestCubeBottom()
@@ -657,31 +747,53 @@ class SOLUTION:
         self.write_urdf()
 
     def initialize_brain_logic(self):
+
         np.random.seed(self.random.randint(0, 2**30))
-        self.weights = 2*np.random.rand(self.numSensors,self.numJoints)
-        self.weights -= 1
+        self.inputWeights = 2*np.random.rand(self.numSensors + self.numPidNeurons,
+                                            self.numSensors)
+        self.inputWeights -= 1
+
+        self.outputWeights = 2*np.random.rand(self.numSensors,self.numJoints)
+        self.outputWeights -= 1
 
     def write_nndf(self):
-        pyrosim.Start_NeuralNetwork("brain" + str(self.myID) + ".nndf")
-
-        j = 0
-        for i in range(len(self.cubes)):
-            if self.sensors[i] == 1:
-                # THIS ONLY ADDS SENSOR CUBES
-                pyrosim.Send_Sensor_Neuron(name = j, linkName = "Link"+str(i))
-                j += 1
-
-        for i in range(self.numJoints):
-            pyrosim.Send_Motor_Neuron(name = j,
-                jointName="Link"+str(self.jointParentLinks[i])+"_Link"+str(self.jointChildLinks[i]))
-            j += 1
-
-        for currentRow in range(self.numSensors):
-            for currentColumn in range(self.numJoints):
-                pyrosim.Send_Synapse(sourceNeuronName = currentRow, targetNeuronName = currentColumn+self.numSensors, weight = self.weights[currentRow][currentColumn])
-
-        pyrosim.End()
+        Write_nndf(self.myID, self.pidNeurons, self.sensors, self.numSensors, self.numPidNeurons,
+            self.cubes, self.joints, self.jointParentLinks, self.jointChildLinks,
+            self.inputWeights, self.outputWeights)
 
     def Create_Brain(self):
         self.initialize_brain_logic()
         self.write_nndf()
+
+class SolutionEncoder(json.JSONEncoder):
+    def convertSolution(self, obj):
+        theDict = dict(copy.deepcopy(obj.__dict__))
+        for key in theDict.keys():
+            #print("key:", key)
+            #print("val:", theDict[key])
+            if isinstance(theDict[key], random.Random):
+                theDict[key] = theDict[key].__dict__
+            elif isinstance(theDict[key], np.ndarray):
+                theDict[key] = theDict[key].tolist()
+            elif isinstance(theDict[key], list) and len(theDict[key]) > 0 and isinstance(theDict[key][0], Cube):
+                #print("FOUND A CUBE")
+                theDict[key] = [cube.__dict__ for cube in theDict[key]]
+            elif isinstance(theDict[key], list) and len(theDict[key]) > 0 and isinstance(theDict[key][0], Joint):
+                theDict[key] = [joint.__dict__ for joint in theDict[key]]
+        theDict["inputWeights"] = copy.deepcopy(obj.inputWeights).tolist()
+        theDict["outputWeights"] = copy.deepcopy(obj.outputWeights).tolist()
+        theDict["cubes"] = [cube.__dict__ for cube in obj.cubes]
+        theDict["joints"] = [joint.__dict__ for joint in obj.joints]
+        return theDict
+
+    def default(self, obj):
+        #print("TYPE IN ENCODER:", type(obj))
+        if isinstance(obj, dict) and isinstance(obj["0"], SOLUTION):
+            #print("DICT OF SOLUTIONS IN ENCODER")
+            lst = [self.convertSolution(sol) for sol in obj.values()]
+            print(lst)
+            return [self.convertSolution(sol) for sol in obj.values()]
+        elif isinstance(obj, SOLUTION):
+            #print("SINGLE SOLUTION IN ENCODER")
+            theDict = self.convertSolution(obj)
+            return theDict

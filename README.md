@@ -3,6 +3,10 @@
 CS 396 -- Artificial Life, Final Project ("Science Option")
 Chase Duvall
 
+See gif.GIF for gif, see fitness plots below.
+
+Video Link: <a href="https://youtu.be/WKl_ih2fvZY">https://youtu.be/WKl_ih2fvZY</a>
+
 <h2>Background</h2>
 
 PID ("Proportional, Integral, Derivative") control is a common method in engineering for maintaining a desired state in a system (e.g. the temperature of a room regulated by a thermostat, or the rate of output of one portion of an assembly line). The basic idea is that the current state ("Proportional"), the previous state added up over a certain time frame ("Integral"), and the rate of change of the current state ("Derivative") all play a role in deciding how the system should be controlled to achieve/maintain the goal state. For example, a thermostat that detects a room rising above a certain temperature (high proportional value) might engage cooling systems at a certain strength -- if it detects high temperatures for longer (integral), it may work harder, while if temperature is already dropping rapidly (derivative), it may cool with less intensity in order to save energy and not over-correct. This kind of control is useful in systems that are susceptible to outside forces, chaotic or unpredictable.

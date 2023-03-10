@@ -63,13 +63,13 @@ For both the control and experimental scenario, 5 evolutionary runs with a popul
 
 Without PID:
 
-//![fitnessGraph_NOPID_3924284438796659210](https://user-images.githubusercontent.com/57238295/224202303-8dad7323-3aef-4bdc-8fc0-87caff926498.png)
+![fitnessGraph_NOPID_3924284438796659210](https://user-images.githubusercontent.com/57238295/224202303-8dad7323-3aef-4bdc-8fc0-87caff926498.png)
 
 With PID:
 
 ![fitnessGraph_PID_7499076605079159191](https://user-images.githubusercontent.com/57238295/224202325-f6f185c9-c894-4da5-93ba-9044991aa706.png)
 
-From the data above, it appears that adding the 9 PID neurons had a noticable positive effect on robots' performance in staying near the origin while the platform oscillated, with fitness (negative distance to origin after 10 seconds) tending to both rise faster and be absolutely higher after 50 generations).
+From the data above, it appears that adding the 9 PID neurons had a noticable positive effect on robots' performance in staying near the origin while the platform oscillated, with fitness (negative distance to origin after 10 seconds) tending to both rise faster and be absolutely higher after 50 generations). This implies that PID can indeed be employed to maintain homeostasis for an organism in a shifting external environment, just as it can be used to maintain a mechanical control system's internal state.
 
 <b>Resources Used</b>
 

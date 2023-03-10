@@ -50,7 +50,7 @@ Adding 9 "PID neurons" (in addition to body sensor neurons), with a proportional
 
 <b>Methods</b>
 
->> brain sketch
+![pid_brain](https://user-images.githubusercontent.com/57238295/224202195-ebbd39a4-eb52-4a31-8564-01577656966b.jpg)
 
 For the experimental scenario, the Pyrosim simulated robot library was modified to allow the creation of "controlled neurons" whose values are set manually by each instance of the ROBOT class, and the ROBOT class was modified to create the 9 PID neurons. For each spatial dimension, a proportional neuron was added whose value was set to the robot's current position in that dimension at each frame, an integral neuron was added whose value was set to the average of past positions in that dimension over the past 60 frames, and a derivative neuron was added whose value was set to the robot's change in position in that dimension since last frame. The hidden layer of the brain was also enlarged to correspond to the new size of the input layers.
 
@@ -58,9 +58,11 @@ For both the control and experimental scenario, 5 evolutionary runs with a popul
 
 <b>Results</b>
 
->> 2 Fitness graphs
 
-//
+
+//![fitnessGraph_NOPID_3924284438796659210](https://user-images.githubusercontent.com/57238295/224202303-8dad7323-3aef-4bdc-8fc0-87caff926498.png)
+
+![fitnessGraph_PID_7499076605079159191](https://user-images.githubusercontent.com/57238295/224202325-f6f185c9-c894-4da5-93ba-9044991aa706.png)
 
 <b>Resources Used</b>
 

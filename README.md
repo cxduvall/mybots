@@ -23,9 +23,9 @@ Viewing simulations: Running "python3 view.py popToShow viewLen pid filename", w
 
 <b>Control Scenario Body Generation/Evolution/Morphospace</b>
 
-The methods for generating/evolving robot bodies and brains are shown below:
+The methods for generating/evolving robot bodies are shown below:
 
-(Ignore the upper half of this first image, it is outdated)
+(See third image below for brain generation/evolution method)
 
 ![new_crop](https://user-images.githubusercontent.com/57238295/224511891-ebe0ac72-63e6-4b7d-b949-793e924c6903.jpg)
 

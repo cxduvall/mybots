@@ -27,7 +27,7 @@ The methods for generating/evolving robot bodies and brains are shown below:
 
 (Ignore the upper half of this first image, it is outdated)
 
-![Diagram1](https://user-images.githubusercontent.com/57238295/221744720-f49f8a53-ab19-481a-b607-be2081615569.jpg)
+![new_crop](https://user-images.githubusercontent.com/57238295/224511891-ebe0ac72-63e6-4b7d-b949-793e924c6903.jpg)
 
 ![Diagram2](https://user-images.githubusercontent.com/57238295/221744777-169ac7fd-ec03-434c-86c9-dd281455203f.jpg)
 

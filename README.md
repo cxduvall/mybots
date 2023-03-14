@@ -3,6 +3,10 @@
 CS 396 -- Artificial Life, Final Project ("Science Option")
 Chase Duvall
 
+See gif.GIF for gif, see fitness plots below.
+
+Video Link: <a href="https://youtu.be/WKl_ih2fvZY">https://youtu.be/WKl_ih2fvZY</a>
+
 <h2>Background</h2>
 
 PID ("Proportional, Integral, Derivative") control is a common method in engineering for maintaining a desired state in a system (e.g. the temperature of a room regulated by a thermostat, or the rate of output of one portion of an assembly line). The basic idea is that the current state ("Proportional"), the previous state added up over a certain time frame ("Integral"), and the rate of change of the current state ("Derivative") all play a role in deciding how the system should be controlled to achieve/maintain the goal state. For example, a thermostat that detects a room rising above a certain temperature (high proportional value) might engage cooling systems at a certain strength -- if it detects high temperatures for longer (integral), it may work harder, while if temperature is already dropping rapidly (derivative), it may cool with less intensity in order to save energy and not over-correct. This kind of control is useful in systems that are susceptible to outside forces, chaotic or unpredictable.
@@ -19,11 +23,11 @@ Viewing simulations: Running "python3 view.py popToShow viewLen pid filename", w
 
 <b>Control Scenario Body Generation/Evolution/Morphospace</b>
 
-The methods for generating/evolving robot bodies and brains are shown below:
+The methods for generating/evolving robot bodies are shown below:
 
-(Ignore the upper half of this first image, it is outdated)
+(See third image below for brain generation/evolution method)
 
-![Diagram1](https://user-images.githubusercontent.com/57238295/221744720-f49f8a53-ab19-481a-b607-be2081615569.jpg)
+![new_crop](https://user-images.githubusercontent.com/57238295/224511891-ebe0ac72-63e6-4b7d-b949-793e924c6903.jpg)
 
 ![Diagram2](https://user-images.githubusercontent.com/57238295/221744777-169ac7fd-ec03-434c-86c9-dd281455203f.jpg)
 

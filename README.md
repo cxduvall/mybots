@@ -5,7 +5,7 @@ Chase Duvall
 
 See gif.GIF for gif, see fitness plots below.
 
-Video Link: <a href="https://youtu.be/WKl_ih2fvZY">https://youtu.be/WKl_ih2fvZY</a>
+Video Link: <a href="https://youtu.be/d0VnmqV7Tjo">https://youtu.be/d0VnmqV7Tjo</a>
 
 <h2>Background</h2>
 

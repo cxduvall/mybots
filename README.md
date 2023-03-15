@@ -61,6 +61,8 @@ Adding 9 "PID neurons" (in addition to body sensor neurons), with a proportional
 
 For the experimental scenario, the Pyrosim simulated robot library was modified to allow the creation of "controlled neurons" whose values are set manually by each instance of the ROBOT class, and the ROBOT class was modified to create the 9 PID neurons. For each spatial dimension, a proportional neuron was added whose value was set to the robot's current position in that dimension at each frame, an integral neuron was added whose value was set to the average of past positions in that dimension over the past 60 frames, and a derivative neuron was added whose value was set to the robot's change in position in that dimension since last frame. The hidden layer of the brain was also enlarged to correspond to the new size of the input layers.
 
+To isolate the variable of interest, a "PID" or "NOPID" flag is taken on the command line for main.py, which is then passed down into the s
+
 For both the control and experimental scenario, 5 evolutionary runs with a population size of 10 and simulations of 10 simulated seconds were performed. Because of the experimenter's major time constraints, only 50 generations were calculated for each run.
 
 <b>Results</b>

@@ -21,6 +21,8 @@ Viewing simulations: Running "python3 view.py popToShow viewLen pid filename", w
 
 <h2>Simulator Explanation (Control Scenario)</h2>
 
+![GeneticEncoding](https://user-images.githubusercontent.com/57238295/225200389-085dead9-e970-4a66-912d-05f4441cd6d9.jpg)
+
 <b>Control Scenario Body Generation/Evolution/Morphospace</b>
 
 The methods for generating/evolving robot bodies are shown below:
@@ -47,9 +49,13 @@ Regarding the brain morphospace, only brains with 1 hidden layers and 2 fully-co
 
 <b>Evolutionary Selection</b>
 
+![PHC](https://user-images.githubusercontent.com/57238295/225200320-26c86eab-cf8a-4c46-a497-24ba9f2fd362.jpg)
+
 Every generation (whether the body is mutated or not), for each member of the robot population, the fitness of the mutated robot is compared to its parent, and the fitter creature continues evolving. This makes the method of selection a "Parallel Hill Climbers" -- fellow members of the population do not directly interact, and the program tries making one change (or one brain and one body change) to robots at a time to check for improvement.
 
 <h2>Experiment</h2>
+
+![ExperimentCartoon](https://user-images.githubusercontent.com/57238295/225200346-0a71924b-f304-4319-8466-e5b644e60bd8.jpg)
 
 <b>Hypothesis</b>
 
@@ -58,6 +64,8 @@ Adding 9 "PID neurons" (in addition to body sensor neurons), with a proportional
 <b>Methods</b>
 
 ![pid_brain](https://user-images.githubusercontent.com/57238295/224202195-ebbd39a4-eb52-4a31-8564-01577656966b.jpg)
+
+
 
 For the experimental scenario, the Pyrosim simulated robot library was modified to allow the creation of "controlled neurons" whose values are set manually by each instance of the ROBOT class (robot.py, pyrosim/neuralNetwork.py, pyrosim/neuron.py), and the ROBOT class was modified to create the 9 PID neurons (robot.py). For each spatial dimension, a proportional neuron was added whose value was set to the robot's current position in that dimension at each frame, an integral neuron was added whose value was set to the average of past positions in that dimension over the past 60 frames, and a derivative neuron was added whose value was set to the robot's change in position in that dimension since last frame. The hidden layer of the brain was also enlarged to correspond to the new size of the input layers (see solution.py for changes in neural network architecture).
 

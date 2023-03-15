@@ -73,8 +73,6 @@ With PID:
 
 ![fitnessGraph_PID_7499076605079159191](https://user-images.githubusercontent.com/57238295/224202325-f6f185c9-c894-4da5-93ba-9044991aa706.png)
 
-From the data above, it appears that adding the 9 PID neurons had a noticable positive effect on robots' performance in staying near the origin while the platform oscillated, with fitness (negative distance to origin after 10 seconds) tending to both rise faster and be absolutely higher after 50 generations). This implies that PID can indeed be employed to maintain homeostasis for an organism in a shifting external environment, just as it can be used to maintain a mechanical control system's internal state.
-
 Lineage example (No PID, run 0):
 
 ![lineage_nopid](https://user-images.githubusercontent.com/57238295/225185875-7407d6d0-f228-4364-a7e3-1e92fea11417.png)
@@ -82,6 +80,10 @@ Lineage example (No PID, run 0):
 Lineage example (PID, run 0):
 
 ![lineage_pid](https://user-images.githubusercontent.com/57238295/225185913-872bb6a6-9f95-42ca-9d51-a4333ce0aa69.png)
+
+<b>Discussion and Conclusion</b>
+
+From the data above, it appears that adding the 9 PID neurons had a noticable positive effect on robots' performance in staying near the origin while the platform oscillated, with fitness (negative distance to origin after 10 seconds) tending to both rise faster and be absolutely higher after 50 generations). This implies that PID can indeed be usefully employed to maintain homeostasis for an organism in a shifting external environment, just as it can be used to maintain a mechanical control system's internal state. With more time, this simulation could be run for a larger number of generations in order to quantify the magnitude of the effect across longer time scales.
 
 <b>Resources Used</b>
 
